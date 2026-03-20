@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STEP NV - Formular Analiza Monte Carlo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --primary: #1a365d;
+  --primary-light: #2c5282;
+  --accent: #e53e3e;
+  --success: #38a169;
+  --warning: #d69e2e;
+  --bg: #f7fafc;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --text: #2d3748;
+  --text-light: #718096;
+  --input-bg: #edf2f7;
+  --section-header: linear-gradient(135deg, #1a365d, #2c5282);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.header {
+  background: var(--section-header);
+  color: white;
+  padding: 2rem 0;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: 0.5px; }
+.header p { font-size: 0.9rem; opacity: 0.85; margin-top: 0.3rem; }
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.nav-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+  background: var(--card);
+  padding: 0.8rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.nav-tab {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: var(--input-bg);
+  color: var(--text-light);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.nav-tab:hover { background: #cbd5e0; color: var(--text); }
+.nav-tab.active { background: var(--primary); color: white; }
+.nav-tab.completed { border-left: 3px solid var(--success); }
+
+.section {
+  display: none;
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.section-header {
+  background: var(--section-header);
+  color: white;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.section-header .step-num {
+  background: rgba(255,255,255,0.2);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.section-header h2 { font-size: 1.1rem; font-weight: 600; }
+
+.section-body { padding: 1.5rem; }
+
+.form-group {
+  margin-bottom: 1rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.form-group.full { grid-template-columns: 1fr; }
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.form-group label .hint {
+  font-weight: 400;
+  color: var(--text-light);
+  font-size: 0.75rem;
+  display: block;
+}
+
+input, select {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: var(--input-bg);
+  color: var(--text);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(26,54,93,0.1);
+  background: white;
+}
+
+input[readonly] {
+  background: #e6fffa;
+  border-color: #81e6d9;
+  color: #234e52;
+  font-weight: 600;
+  cursor: default;
+}
+
+input.error { border-color: var(--accent); background: #fff5f5; }
+input.valid { border-color: var(--success); }
+
+.subsection {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 1.2rem;
+  overflow: hidden;
+}
+
+.subsection-title {
+  background: #edf2f7;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--primary);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.subsection-body { padding: 1rem; }
+
+.table-grid {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.table-grid th {
+  background: var(--primary);
+  color: white;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.table-grid td {
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+.table-grid td:first-child { font-weight: 500; min-width: 200px; }
+
+.table-grid input {
+  padding: 0.4rem;
+  font-size: 0.85rem;
+  text-align: right;
+  border-radius: 4px;
+}
+
+.table-grid .total-row { background: #f0fff4; font-weight: 700; }
+.table-grid .total-row td { border-top: 2px solid var(--success); }
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-ok { background: #c6f6d5; color: #22543d; }
+.status-error { background: #fed7d7; color: #9b2c2c; }
+.status-warning { background: #fefcbf; color: #744210; }
+
+.btn-row {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 0.7rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-light); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,54,93,0.3); }
+
+.btn-success { background: var(--success); color: white; }
+.btn-success:hover { background: #2f855a; transform: translateY(-1px); }
+
+.btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+.btn-outline:hover { background: var(--primary); color: white; }
+
+.btn-secondary { background: #718096; color: white; }
+.btn-secondary:hover { background: #4a5568; }
+
+.progress-bar {
+  height: 6px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 3px;
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #48bb78;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.summary-card {
+  background: linear-gradient(135deg, #ebf8ff, #e6fffa);
+  border: 1px solid #b2f5ea;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  font-size: 0.85rem;
+}
+
+.summary-row .label { color: var(--text-light); }
+.summary-row .value { font-weight: 700; color: var(--primary); }
+
+.info-box {
+  background: #ebf8ff;
+  border-left: 4px solid #3182ce;
+  padding: 0.8rem 1rem;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 1rem;
+  font-size: 0.82rem;
+  color: #2a4365;
+}
+
+.warning-box {
+  background: #fffbeb;
+  border-left: 4px solid var(--warning);
+  padding: 0.8rem 1rem;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 1rem;
+  font-size: 0.82rem;
+  color: #744210;
+}
+
+.footer {
+  text-align: center;
+  padding: 2rem 0;
+  color: var(--text-light);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+  .form-group { grid-template-columns: 1fr; }
+  .nav-tabs { gap: 0.3rem; }
+  .nav-tab { font-size: 0.7rem; padding: 0.4rem 0.7rem; }
+  .btn-row { flex-direction: column; }
+  .btn { width: 100%; justify-content: center; }
+}
+
+.yr-label { font-size: 0.75rem; color: var(--text-light); text-align: center; }
+
+@media print {
+  .header { position: static; }
+  .nav-tabs, .btn-row, .btn { display: none !important; }
+  .section { display: block !important; page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>STEP NV - Formular Analiza Monte Carlo</h1>
+  <p>Completarea datelor pentru analiza de fezabilitate financiara si probabilitate finantare</p>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+</div>
+
+<div class="container">
+
+<div class="nav-tabs" id="navTabs">
+  <button class="nav-tab active" onclick="showSection(0)">1. Companie</button>
+  <button class="nav-tab" onclick="showSection(1)">2. Proiect</button>
+  <button class="nav-tab" onclick="showSection(2)">3. Tipuri Ajutor</button>
+  <button class="nav-tab" onclick="showSection(3)">4. Investitie</button>
+  <button class="nav-tab" onclick="showSection(4)">5. Venituri & Costuri</button>
+  <button class="nav-tab" onclick="showSection(5)">6. Bilant & P&L</button>
+  <button class="nav-tab" onclick="showSection(6)">7. Active & Durate</button>
+  <button class="nav-tab" onclick="showSection(7)">8. Parametri MC</button>
+  <button class="nav-tab" onclick="showSection(8)">9. Rezumat & Export</button>
+</div>
+
+<!-- SECTION 1: COMPANIE -->
+<div class="section active" id="sec0">
+  <div class="section-header">
+    <div class="step-num">1</div>
+    <h2>Date Companie</h2>
+  </div>
+  <div class="section-body">
+    <div class="info-box">Completati datele de identificare ale companiei solicitante. Toate campurile marcate sunt obligatorii.</div>
+    <div class="form-group">
+      <label>Denumire firma<span class="hint">Numele complet al societatii</span></label>
+      <input type="text" id="denumire" placeholder="ex: SC Exemplu SRL" required>
+    </div>
+    <div class="form-group">
+      <label>Tip IMM<span class="hint">Conform Legii 346/2004</span></label>
+      <select id="tipIMM">
+        <option value="">-- Selectati --</option>
+        <option value="Micro">Micro</option>
+        <option value="Mică">Mica</option>
+        <option value="Mijlocie">Mijlocie</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Regiune<span class="hint">Regiune de dezvoltare</span></label>
+      <select id="regiune">
+        <option value="">-- Selectati --</option>
+        <option value="Nord-Vest (LDR)">Nord-Vest (LDR)</option>
+        <option value="Nord-Est (LDR)">Nord-Est (LDR)</option>
+        <option value="Sud-Est (LDR)">Sud-Est (LDR)</option>
+        <option value="Sud-Muntenia (LDR)">Sud-Muntenia (LDR)</option>
+        <option value="Sud-Vest Oltenia (LDR)">Sud-Vest Oltenia (LDR)</option>
+        <option value="Vest (LDR)">Vest (LDR)</option>
+        <option value="Centru (LDR)">Centru (LDR)</option>
+        <option value="București-Ilfov (MDR)">Bucuresti-Ilfov (MDR)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>CAEN principal<span class="hint">Codul CAEN al activitatii principale</span></label>
+      <input type="text" id="caen" placeholder="ex: 2511" maxlength="4">
+    </div>
+    <div class="form-group">
+      <label>Subdomeniu SNCISI<span class="hint">Strategia Nationala de Cercetare</span></label>
+      <select id="subdomeniu">
+        <option value="">-- Selectati --</option>
+        <option value="Producție industrială">Productie industriala</option>
+        <option value="Bioeconomie">Bioeconomie</option>
+        <option value="Energie, mediu, schimbări climatice">Energie, mediu, schimbari climatice</option>
+        <option value="Eco-nano-tehnologii">Eco-nano-tehnologii</option>
+        <option value="TIC / Spațiu / Securitate">TIC / Spatiu / Securitate</option>
+        <option value="Sănătate">Sanatate</option>
+        <option value="Patrimoniu și identitate culturală">Patrimoniu si identitate culturala</option>
+        <option value="Societăți inclusive și sigure">Societati inclusive si sigure</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Nr. angajati actual<span class="hint">Numar total de angajati</span></label>
+      <input type="number" id="nrAngajati" min="0" placeholder="ex: 25">
+    </div>
+    <div class="form-group">
+      <label>Cifra de afaceri ultimul an (EUR)<span class="hint">CA din ultimul exercitiu financiar</span></label>
+      <input type="number" id="caUltimulAn" min="0" step="1000" placeholder="ex: 800000">
+    </div>
+    <div class="btn-row">
+      <div></div>
+      <button class="btn btn-primary" onclick="showSection(1)">Pasul urmator &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2: PARAMETRI PROIECT -->
+<div class="section" id="sec1">
+  <div class="section-header">
+    <div class="step-num">2</div>
+    <h2>Parametri Proiect</h2>
+  </div>
+  <div class="section-body">
+    <div class="info-box">Definiti bugetul si durata proiectului. Contributia proprie se calculeaza automat.</div>
+    <div class="form-group">
+      <label>Buget total proiect (EUR)<span class="hint">Valoarea totala eligibila</span></label>
+      <input type="number" id="bugetTotal" min="0" step="1000" placeholder="ex: 1200000" oninput="calcBuget()">
+    </div>
+    <div class="form-group">
+      <label>Valoare nerambursabil solicitata (EUR)<span class="hint">Finantare solicitata</span></label>
+      <input type="number" id="valNerambursabil" min="0" step="1000" placeholder="ex: 750000" oninput="calcBuget()">
+    </div>
+    <div class="form-group">
+      <label>Contributie proprie (EUR)<span class="hint">Calculat automat</span></label>
+      <input type="number" id="contProprie" readonly>
+    </div>
+    <div class="form-group">
+      <label>Durata implementare (luni)<span class="hint">Maxim 36 luni</span></label>
+      <input type="number" id="durataImpl" min="1" max="36" placeholder="ex: 24">
+    </div>
+    <div class="form-group">
+      <label>Durata durabilitate (luni)<span class="hint">Perioada post-implementare</span></label>
+      <input type="number" id="durataDurab" min="12" max="60" placeholder="ex: 36">
+    </div>
+
+    <div class="subsection" style="margin-top: 1.2rem;">
+      <div class="subsection-title">Parametri Oficiali Anexa III.5</div>
+      <div class="subsection-body">
+        <div class="form-group">
+          <label>Curs INFOREURO (lei/EUR)</label>
+          <input type="number" id="cursEUR" step="0.0001" value="4.9638" placeholder="4.9638">
+        </div>
+        <div class="form-group">
+          <label>TVA - persoana impozabila</label>
+          <select id="tvaImpoz">
+            <option value="DA">DA</option>
+            <option value="NU">NU</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Cota TVA (%)</label>
+          <input type="number" id="cotaTVA" value="19" step="1" min="0" max="100">
+        </div>
+        <div class="form-group">
+          <label>Rata actualizare financiara EC (%)</label>
+          <input type="number" id="rataActualizare" value="9.31" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Data estimata semnare contract</label>
+          <input type="date" id="dataSemnare" value="2027-01-01">
+        </div>
+        <div class="form-group">
+          <label>Durata viata economica proiect (ani)</label>
+          <input type="number" id="durataViata" value="10" min="1" max="30">
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="showSection(0)">&#8592; Inapoi</button>
+      <button class="btn btn-primary" onclick="showSection(2)">Pasul urmator &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: DISTRIBUTIE BUGET PE TIPURI AJUTOR -->
+<div class="section" id="sec2">
+  <div class="section-header">
+    <div class="step-num">3</div>
+    <h2>Distributie Buget pe Tipuri de Ajutor</h2>
+  </div>
+  <div class="section-body">
+    <div class="info-box">Alocati bugetul pe tipuri de ajutor de stat. Grantul si cofinantarea se calculeaza automat pe baza intensitatilor.</div>
+    <table class="table-grid">
+      <thead>
+        <tr>
+          <th>Tip Ajutor</th>
+          <th>Total (EUR)</th>
+          <th>Intensitate (%)</th>
+          <th>Grant (EUR)</th>
+          <th>Cofinantare (EUR)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Ajutor Regional</td>
+          <td><input type="number" id="ajRegTotal" min="0" step="1000" oninput="calcAjutor()" placeholder="0"></td>
+          <td><input type="number" id="ajRegInt" min="0" max="100" step="5" oninput="calcAjutor()" placeholder="60"></td>
+          <td><input type="number" id="ajRegGrant" readonly></td>
+          <td><input type="number" id="ajRegCofin" readonly></td>
+        </tr>
+        <tr>
+          <td>CDI Cercetare industriala</td>
+          <td><input type="number" id="cdiIndTotal" min="0" step="1000" oninput="calcAjutor()" placeholder="0"></td>
+          <td><input type="number" id="cdiIndInt" min="0" max="100" step="5" oninput="calcAjutor()" placeholder="70"></td>
+          <td><input type="number" id="cdiIndGrant" readonly></td>
+          <td><input type="number" id="cdiIndCofin" readonly></td>
+        </tr>
+        <tr>
+          <td>CDI Dezvoltare experimentala</td>
+          <td><input type="number" id="cdiExpTotal" min="0" step="1000" oninput="calcAjutor()" placeholder="0"></td>
+          <td><input type="number" id="cdiExpInt" min="0" max="100" step="5" oninput="calcAjutor()" placeholder="45"></td>
+          <td><input type="number" id="cdiExpGrant" readonly></td>
+          <td><input type="number" id="cdiExpCofin" readonly></td>
+        </tr>
+        <tr>
+          <td>Minimis</td>
+          <td><input type="number" id="minimisTotal" min="0" step="1000" oninput="calcAjutor()" placeholder="0"></td>
+          <td><input type="number" id="minimisInt" value="100" readonly></td>
+          <td><input type="number" id="minimisGrant" readonly></td>
+          <td><input type="number" id="minimisCofin" readonly></td>
+        </tr>
+        <tr class="total-row">
+          <td>TOTAL</td>
+          <td><input type="number" id="totalAjutor" readonly></td>
+          <td></td>
+          <td><input type="number" id="totalGrant" readonly></td>
+          <td><input type="number" id="totalCofin" readonly></td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="margin-top:0.8rem; display:flex; gap:0.5rem; align-items:center;">
+      <span style="font-size:0.85rem; font-weight:600;">Verificare buget:</span>
+      <span class="status-badge" id="statusBuget">-</span>
+      <span style="margin-left:1rem; font-size:0.85rem; font-weight:600;">Grant vs solicitat:</span>
+      <span class="status-badge" id="statusGrant">-</span>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="showSection(1)">&#8592; Inapoi</button>
+      <button class="btn btn-primary" onclick="showSection(3)">Pasul urmator &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 4: DETALIERE INVESTITIE -->
+<div class="section" id="sec3">
+  <div class="section-header">
+    <div class="step-num">4</div>
+    <h2>Detaliere Investitie</h2>
+  </div>
+  <div class="section-body">
+    <div class="info-box">Detaliere cheltuieli eligibile pe categorii de investitie. Totalul trebuie sa corespunda cu bugetul total al proiectului.</div>
+    <table class="table-grid">
+      <thead>
+        <tr><th>Categorie Investitie</th><th>Valoare (EUR)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Echipamente productie</td><td><input type="number" id="invEchip" min="0" step="1000" oninput="calcInvestit()" placeholder="0"></td></tr>
+        <tr><td>Utilaje industriale</td><td><input type="number" id="invUtil" min="0" step="1000" oninput="calcInvestit()" placeholder="0"></td></tr>
+        <tr><td>Software/licente</td><td><input type="number" id="invSoft" min="0" step="1000" oninput="calcInvestit()" placeholder="0"></td></tr>
+        <tr><td>Personal CDI cercetare</td><td><input type="number" id="invPersCDI" min="0" step="1000" oninput="calcInvestit()" placeholder="0"></td></tr>
+        <tr><td>Cercetare contractuala</td><td><input type="number" id="invCercContr" min="0" step="1000" oninput="calcInvestit()" placeholder="0"></td></tr>
+        <tr><td>Brevete/licente externe</td><td><input type="number" id="invBrevete" min="0" step="1000" oninput="calcInvestit()" placeholder="0"></td></tr>
+        <tr><td>Consultanta (A1 + management)</td><td><input type="number" id="invConsult" min="0" step="1000" oninput="calcInvestit()" placeholder="0"></td></tr>
+        <tr><td>Marketing/piata (A6)</td><td><input type="number" id="invMarketing" min="0" step="1000" oninput="calcInvestit()" placeholder="0"></td></tr>
+        <tr><td>Audit tehnic (A9)</td><td><input type="number" id="invAudit" min="0" step="1000" oninput="calcInvestit()" placeholder="0"></td></tr>
+        <tr><td>Publicitate (A7)</td><td><input type="number" id="invPublic" min="0" step="1000" oninput="calcInvestit()" placeholder="0"></td></tr>
+        <tr><td>Accesibilitate (A10)</td><td><input type="number" id="invAcces" min="0" step="1000" oninput="calcInvestit()" placeholder="0"></td></tr>
+        <tr><td>Alte costuri</td><td><input type="number" id="invAlte" min="0" step="1000" oninput="calcInvestit()" placeholder="0"></td></tr>
+        <tr class="total-row">
+          <td>TOTAL INVESTITIE</td>
+          <td><input type="number" id="totalInvestit" readonly></td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="margin-top:0.8rem; display:flex; gap:0.5rem; align-items:center;">
+      <span style="font-size:0.85rem; font-weight:600;">Verificare vs buget:</span>
+      <span class="status-badge" id="statusInvestit">-</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="showSection(2)">&#8592; Inapoi</button>
+      <button class="btn btn-primary" onclick="showSection(4)">Pasul urmator &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 5: VENITURI & COSTURI -->
+<div class="section" id="sec4">
+  <div class="section-header">
+    <div class="step-num">5</div>
+    <h2>Proiectii Venituri si Costuri Operationale</h2>
+  </div>
+  <div class="section-body">
+    <div class="subsection">
+      <div class="subsection-title">Proiectii Venituri (EUR) - An 1 la An 5</div>
+      <div class="subsection-body">
+        <table class="table-grid">
+          <thead><tr><th></th><th>An 1</th><th>An 2</th><th>An 3</th><th>An 4</th><th>An 5</th><th>Total</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Venituri (EUR)</td>
+              <td><input type="number" id="venAn1" min="0" step="1000" oninput="calcVenCost()" placeholder="0"></td>
+              <td><input type="number" id="venAn2" min="0" step="1000" oninput="calcVenCost()" placeholder="0"></td>
+              <td><input type="number" id="venAn3" min="0" step="1000" oninput="calcVenCost()" placeholder="0"></td>
+              <td><input type="number" id="venAn4" min="0" step="1000" oninput="calcVenCost()" placeholder="0"></td>
+              <td><input type="number" id="venAn5" min="0" step="1000" oninput="calcVenCost()" placeholder="0"></td>
+              <td><input type="number" id="totalVen" readonly></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Costuri Operationale (EUR) - An 1 la An 5</div>
+      <div class="subsection-body">
+        <table class="table-grid">
+          <thead><tr><th></th><th>An 1</th><th>An 2</th><th>An 3</th><th>An 4</th><th>An 5</th><th>Total</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Costuri (EUR)</td>
+              <td><input type="number" id="costAn1" min="0" step="1000" oninput="calcVenCost()" placeholder="0"></td>
+              <td><input type="number" id="costAn2" min="0" step="1000" oninput="calcVenCost()" placeholder="0"></td>
+              <td><input type="number" id="costAn3" min="0" step="1000" oninput="calcVenCost()" placeholder="0"></td>
+              <td><input type="number" id="costAn4" min="0" step="1000" oninput="calcVenCost()" placeholder="0"></td>
+              <td><input type="number" id="costAn5" min="0" step="1000" oninput="calcVenCost()" placeholder="0"></td>
+              <td><input type="number" id="totalCost" readonly></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Venituri Monetare Proiect Detaliate (LEI/an) - pentru Anexa III.5</div>
+      <div class="subsection-body">
+        <table class="table-grid">
+          <thead><tr><th>Categorie</th><th>An 1</th><th>An 2</th><th>An 3</th><th>An 4</th><th>An 5</th></tr></thead>
+          <tbody>
+            <tr><td>Venituri din vanzari produse/servicii noi</td>
+              <td><input type="number" class="venDet" data-an="1" data-cat="vanzari" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="2" data-cat="vanzari" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="3" data-cat="vanzari" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="4" data-cat="vanzari" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="5" data-cat="vanzari" min="0" oninput="calcVenDet()" placeholder="0"></td>
+            </tr>
+            <tr><td>Venituri din licentiere/brevete</td>
+              <td><input type="number" class="venDet" data-an="1" data-cat="licente" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="2" data-cat="licente" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="3" data-cat="licente" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="4" data-cat="licente" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="5" data-cat="licente" min="0" oninput="calcVenDet()" placeholder="0"></td>
+            </tr>
+            <tr><td>Economii din eficientizare procese</td>
+              <td><input type="number" class="venDet" data-an="1" data-cat="economii" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="2" data-cat="economii" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="3" data-cat="economii" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="4" data-cat="economii" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="5" data-cat="economii" min="0" oninput="calcVenDet()" placeholder="0"></td>
+            </tr>
+            <tr><td>Venituri din consultanta tehnica</td>
+              <td><input type="number" class="venDet" data-an="1" data-cat="consult" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="2" data-cat="consult" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="3" data-cat="consult" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="4" data-cat="consult" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="5" data-cat="consult" min="0" oninput="calcVenDet()" placeholder="0"></td>
+            </tr>
+            <tr><td>Alte venituri din exploatare proiect</td>
+              <td><input type="number" class="venDet" data-an="1" data-cat="alteVen" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="2" data-cat="alteVen" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="3" data-cat="alteVen" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="4" data-cat="alteVen" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="5" data-cat="alteVen" min="0" oninput="calcVenDet()" placeholder="0"></td>
+            </tr>
+            <tr><td>Venituri diverse</td>
+              <td><input type="number" class="venDet" data-an="1" data-cat="diverse" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="2" data-cat="diverse" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="3" data-cat="diverse" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="4" data-cat="diverse" min="0" oninput="calcVenDet()" placeholder="0"></td>
+              <td><input type="number" class="venDet" data-an="5" data-cat="diverse" min="0" oninput="calcVenDet()" placeholder="0"></td>
+            </tr>
+            <tr class="total-row">
+              <td>TOTAL VENITURI PROIECT</td>
+              <td><input type="number" id="totalVenDet1" readonly></td>
+              <td><input type="number" id="totalVenDet2" readonly></td>
+              <td><input type="number" id="totalVenDet3" readonly></td>
+              <td><input type="number" id="totalVenDet4" readonly></td>
+              <td><input type="number" id="totalVenDet5" readonly></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Cheltuieli Monetare Proiect Detaliate (LEI/an) - pentru Anexa III.5</div>
+      <div class="subsection-body">
+        <table class="table-grid">
+          <thead><tr><th>Categorie</th><th>An 1</th><th>An 2</th><th>An 3</th><th>An 4</th><th>An 5</th></tr></thead>
+          <tbody>
+            <tr><td>Cheltuieli materiale</td>
+              <td><input type="number" class="chDet" data-an="1" data-cat="materiale" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="2" data-cat="materiale" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="3" data-cat="materiale" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="4" data-cat="materiale" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="5" data-cat="materiale" min="0" oninput="calcChDet()" placeholder="0"></td>
+            </tr>
+            <tr><td>Cheltuieli cu utilitatile</td>
+              <td><input type="number" class="chDet" data-an="1" data-cat="utilitati" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="2" data-cat="utilitati" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="3" data-cat="utilitati" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="4" data-cat="utilitati" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="5" data-cat="utilitati" min="0" oninput="calcChDet()" placeholder="0"></td>
+            </tr>
+            <tr><td>Cheltuieli cu personalul</td>
+              <td><input type="number" class="chDet" data-an="1" data-cat="personal" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="2" data-cat="personal" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="3" data-cat="personal" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="4" data-cat="personal" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="5" data-cat="personal" min="0" oninput="calcChDet()" placeholder="0"></td>
+            </tr>
+            <tr><td>Cheltuieli mentenanta/reparatii</td>
+              <td><input type="number" class="chDet" data-an="1" data-cat="mentenanta" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="2" data-cat="mentenanta" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="3" data-cat="mentenanta" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="4" data-cat="mentenanta" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="5" data-cat="mentenanta" min="0" oninput="calcChDet()" placeholder="0"></td>
+            </tr>
+            <tr><td>Cheltuieli servicii buget proiect</td>
+              <td><input type="number" class="chDet" data-an="1" data-cat="servicii" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="2" data-cat="servicii" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="3" data-cat="servicii" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="4" data-cat="servicii" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="5" data-cat="servicii" min="0" oninput="calcChDet()" placeholder="0"></td>
+            </tr>
+            <tr><td>Alte cheltuieli directe</td>
+              <td><input type="number" class="chDet" data-an="1" data-cat="alteCh" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="2" data-cat="alteCh" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="3" data-cat="alteCh" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="4" data-cat="alteCh" min="0" oninput="calcChDet()" placeholder="0"></td>
+              <td><input type="number" class="chDet" data-an="5" data-cat="alteCh" min="0" oninput="calcChDet()" placeholder="0"></td>
+            </tr>
+            <tr class="total-row">
+              <td>TOTAL CHELTUIELI PROIECT</td>
+              <td><input type="number" id="totalChDet1" readonly></td>
+              <td><input type="number" id="totalChDet2" readonly></td>
+              <td><input type="number" id="totalChDet3" readonly></td>
+              <td><input type="number" id="totalChDet4" readonly></td>
+              <td><input type="number" id="totalChDet5" readonly></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="showSection(3)">&#8592; Inapoi</button>
+      <button class="btn btn-primary" onclick="showSection(5)">Pasul urmator &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 6: BILANT & P&L -->
+<div class="section" id="sec5">
+  <div class="section-header">
+    <div class="step-num">6</div>
+    <h2>Bilant Prescurtat si Cont Profit & Pierdere</h2>
+  </div>
+  <div class="section-body">
+    <div class="info-box">Date din situatiile financiare ale companiei (N-1 si N). Toate valorile in LEI. Acestea alimenteaza Anexa III.5.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">A. Bilant Prescurtat (LEI)</div>
+      <div class="subsection-body">
+        <table class="table-grid">
+          <thead><tr><th>Element bilantier</th><th>N-1 (lei)</th><th>N (lei)</th></tr></thead>
+          <tbody>
+            <tr><td colspan="3" style="font-weight:700; background:#edf2f7;">A. ACTIVE IMOBILIZATE</td></tr>
+            <tr><td>I. Imobilizari corporale</td><td><input type="number" id="bilCorpN1" oninput="calcBilant()" placeholder="0"></td><td><input type="number" id="bilCorpN" oninput="calcBilant()" placeholder="0"></td></tr>
+            <tr><td>II. Imobilizari necorporale</td><td><input type="number" id="bilNecorpN1" oninput="calcBilant()" placeholder="0"></td><td><input type="number" id="bilNecorpN" oninput="calcBilant()" placeholder="0"></td></tr>
+            <tr><td>III. Imobilizari financiare</td><td><input type="number" id="bilFinN1" oninput="calcBilant()" placeholder="0"></td><td><input type="number" id="bilFinN" oninput="calcBilant()" placeholder="0"></td></tr>
+            <tr class="total-row"><td>TOTAL ACTIVE IMOBILIZATE</td><td><input type="number" id="totalActImobN1" readonly></td><td><input type="number" id="totalActImobN" readonly></td></tr>
+            <tr><td colspan="3" style="font-weight:700; background:#edf2f7;">B. ACTIVE CIRCULANTE</td></tr>
+            <tr><td>I. Stocuri</td><td><input type="number" id="bilStocN1" oninput="calcBilant()" placeholder="0"></td><td><input type="number" id="bilStocN" oninput="calcBilant()" placeholder="0"></td></tr>
+            <tr><td>II. Creante</td><td><input type="number" id="bilCreanteN1" oninput="calcBilant()" placeholder="0"></td><td><input type="number" id="bilCreanteN" oninput="calcBilant()" placeholder="0"></td></tr>
+            <tr><td>III. Investitii pe termen scurt</td><td><input type="number" id="bilInvTSN1" oninput="calcBilant()" placeholder="0"></td><td><input type="number" id="bilInvTSN" oninput="calcBilant()" placeholder="0"></td></tr>
+            <tr><td>IV. Casa si conturi la banci</td><td><input type="number" id="bilCasaN1" oninput="calcBilant()" placeholder="0"></td><td><input type="number" id="bilCasaN" oninput="calcBilant()" placeholder="0"></td></tr>
+            <tr class="total-row"><td>TOTAL ACTIVE CIRCULANTE</td><td><input type="number" id="totalActCircN1" readonly></td><td><input type="number" id="totalActCircN" readonly></td></tr>
+            <tr><td>C. Cheltuieli in avans</td><td><input type="number" id="bilChAvN1" placeholder="0"></td><td><input type="number" id="bilChAvN" placeholder="0"></td></tr>
+            <tr><td>D. Datorii &lt; 1 an</td><td><input type="number" id="bilDat1N1" placeholder="0"></td><td><input type="number" id="bilDat1N" placeholder="0"></td></tr>
+            <tr><td>E. Datorii &gt; 1 an</td><td><input type="number" id="bilDatMN1" placeholder="0"></td><td><input type="number" id="bilDatMN" placeholder="0"></td></tr>
+            <tr><td>F. Provizioane</td><td><input type="number" id="bilProvN1" placeholder="0"></td><td><input type="number" id="bilProvN" placeholder="0"></td></tr>
+            <tr><td>Venituri in avans</td><td><input type="number" id="bilVenAvN1" placeholder="0"></td><td><input type="number" id="bilVenAvN" placeholder="0"></td></tr>
+            <tr><td colspan="3" style="font-weight:700; background:#edf2f7;">J. CAPITAL SI REZERVE</td></tr>
+            <tr><td>I. Capital subscris varsat</td><td><input type="number" id="bilCapN1" oninput="calcBilant()" placeholder="0"></td><td><input type="number" id="bilCapN" oninput="calcBilant()" placeholder="0"></td></tr>
+            <tr><td>II. Prime de capital</td><td><input type="number" id="bilPrimeN1" oninput="calcBilant()" placeholder="0"></td><td><input type="number" id="bilPrimeN" oninput="calcBilant()" placeholder="0"></td></tr>
+            <tr><td>III. Rezerve din reevaluare</td><td><input type="number" id="bilReevN1" oninput="calcBilant()" placeholder="0"></td><td><input type="number" id="bilReevN" oninput="calcBilant()" placeholder="0"></td></tr>
+            <tr><td>IV. Rezerve</td><td><input type="number" id="bilRezN1" oninput="calcBilant()" placeholder="0"></td><td><input type="number" id="bilRezN" oninput="calcBilant()" placeholder="0"></td></tr>
+            <tr><td>V. Profitul/pierderea reportata</td><td><input type="number" id="bilProfRepN1" oninput="calcBilant()" placeholder="0"></td><td><input type="number" id="bilProfRepN" oninput="calcBilant()" placeholder="0"></td></tr>
+            <tr><td>VI. Profitul/pierderea exercitiului</td><td><input type="number" id="bilProfExN1" oninput="calcBilant()" placeholder="0"></td><td><input type="number" id="bilProfExN" oninput="calcBilant()" placeholder="0"></td></tr>
+            <tr><td>VII. Repartizarea profitului</td><td><input type="number" id="bilRepartN1" oninput="calcBilant()" placeholder="0"></td><td><input type="number" id="bilRepartN" oninput="calcBilant()" placeholder="0"></td></tr>
+            <tr class="total-row"><td>TOTAL CAPITALURI PROPRII</td><td><input type="number" id="totalCapN1" readonly></td><td><input type="number" id="totalCapN" readonly></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">B. Cont Profit si Pierdere (LEI)</div>
+      <div class="subsection-body">
+        <table class="table-grid">
+          <thead><tr><th>Element P&L</th><th>Semn</th><th>N-1 (lei)</th><th>N (lei)</th></tr></thead>
+          <tbody>
+            <tr><td>1. Cifra de afaceri neta</td><td>(+)</td><td><input type="number" id="plCAN1" oninput="calcPL()" placeholder="0"></td><td><input type="number" id="plCAN" oninput="calcPL()" placeholder="0"></td></tr>
+            <tr><td>2. Alte venituri din exploatare</td><td>(+)</td><td><input type="number" id="plAlteVenN1" oninput="calcPL()" placeholder="0"></td><td><input type="number" id="plAlteVenN" oninput="calcPL()" placeholder="0"></td></tr>
+            <tr><td>3. Alte venituri financiare</td><td>(+)</td><td><input type="number" id="plVenFinN1" oninput="calcPL()" placeholder="0"></td><td><input type="number" id="plVenFinN" oninput="calcPL()" placeholder="0"></td></tr>
+            <tr><td>4. Costul materiilor prime</td><td>(-)</td><td><input type="number" id="plMatN1" oninput="calcPL()" placeholder="0"></td><td><input type="number" id="plMatN" oninput="calcPL()" placeholder="0"></td></tr>
+            <tr><td>5. Cheltuieli cu personalul</td><td>(-)</td><td><input type="number" id="plPersN1" oninput="calcPL()" placeholder="0"></td><td><input type="number" id="plPersN" oninput="calcPL()" placeholder="0"></td></tr>
+            <tr><td>6. Ajustari de valoare (amortizare)</td><td>(-)</td><td><input type="number" id="plAmortN1" oninput="calcPL()" placeholder="0"></td><td><input type="number" id="plAmortN" oninput="calcPL()" placeholder="0"></td></tr>
+            <tr><td>7. Alte cheltuieli din exploatare</td><td>(-)</td><td><input type="number" id="plAlteChN1" oninput="calcPL()" placeholder="0"></td><td><input type="number" id="plAlteChN" oninput="calcPL()" placeholder="0"></td></tr>
+            <tr><td>8. Alte cheltuieli financiare</td><td>(-)</td><td><input type="number" id="plChFinN1" oninput="calcPL()" placeholder="0"></td><td><input type="number" id="plChFinN" oninput="calcPL()" placeholder="0"></td></tr>
+            <tr><td>9. Impozite</td><td>(-)</td><td><input type="number" id="plImpN1" oninput="calcPL()" placeholder="0"></td><td><input type="number" id="plImpN" oninput="calcPL()" placeholder="0"></td></tr>
+            <tr class="total-row"><td>10. PROFIT NET EXERCITIU</td><td></td><td><input type="number" id="plProfitN1" readonly></td><td><input type="number" id="plProfitN" readonly></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Venituri/Cheltuieli Existente Societate (fara proiect, LEI/an)</div>
+      <div class="subsection-body">
+        <table class="table-grid">
+          <thead><tr><th>Element</th><th>Valoare anuala (lei)</th></tr></thead>
+          <tbody>
+            <tr><td>Cifra de afaceri neta existenta</td><td><input type="number" id="exCA" placeholder="0"></td></tr>
+            <tr><td>Alte venituri exploatare existente</td><td><input type="number" id="exAlteVen" placeholder="0"></td></tr>
+            <tr><td>Alte venituri financiare existente</td><td><input type="number" id="exVenFin" placeholder="0"></td></tr>
+            <tr><td>Cost materii prime existente (-)</td><td><input type="number" id="exMatPrime" placeholder="0"></td></tr>
+            <tr><td>Cheltuieli personal existente (-)</td><td><input type="number" id="exPers" placeholder="0"></td></tr>
+            <tr><td>Ajustari valoare / amortizare existenta (-)</td><td><input type="number" id="exAmort" placeholder="0"></td></tr>
+            <tr><td>Alte cheltuieli exploatare existente (-)</td><td><input type="number" id="exAlteCh" placeholder="0"></td></tr>
+            <tr><td>Alte cheltuieli financiare existente (-)</td><td><input type="number" id="exChFin" placeholder="0"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="showSection(4)">&#8592; Inapoi</button>
+      <button class="btn btn-primary" onclick="showSection(6)">Pasul urmator &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 7: ACTIVE & DURATE -->
+<div class="section" id="sec6">
+  <div class="section-header">
+    <div class="step-num">7</div>
+    <h2>Durate Utilizare Active si Active Inlocuire</h2>
+  </div>
+  <div class="section-body">
+    <div class="subsection">
+      <div class="subsection-title">Durate Utilizare Active (pentru Anexa III.5)</div>
+      <div class="subsection-body">
+        <table class="table-grid">
+          <thead><tr><th>Denumire activ</th><th>Durata (ani)</th><th>Valoare inventar (lei)</th></tr></thead>
+          <tbody>
+            <tr><td>Echipamente productie</td><td><input type="number" id="durEchip" value="8" min="1"></td><td><input type="number" id="valEchip" placeholder="0"></td></tr>
+            <tr><td>Utilaje industriale</td><td><input type="number" id="durUtil" value="10" min="1"></td><td><input type="number" id="valUtil" placeholder="0"></td></tr>
+            <tr><td>Software/licente</td><td><input type="number" id="durSoft" value="3" min="1"></td><td><input type="number" id="valSoft" placeholder="0"></td></tr>
+            <tr><td>Brevete/licente externe</td><td><input type="number" id="durBrevete" value="5" min="1"></td><td><input type="number" id="valBrevete" placeholder="0"></td></tr>
+            <tr><td>Alte costuri (echipamente)</td><td><input type="number" id="durAlte" value="5" min="1"></td><td><input type="number" id="valAlte" placeholder="0"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Active Inlocuire Durata Scurta (pentru Anexa III.5)</div>
+      <div class="subsection-body">
+        <table class="table-grid">
+          <thead><tr><th>Denumire activ</th><th>Valoare inventar (lei)</th><th>Frecventa inlocuire (ani)</th></tr></thead>
+          <tbody>
+            <tr><td><input type="text" id="actInl1Nume" placeholder="Activ inlocuire 1"></td><td><input type="number" id="actInl1Val" placeholder="0"></td><td><input type="number" id="actInl1Frec" min="1" placeholder="0"></td></tr>
+            <tr><td><input type="text" id="actInl2Nume" placeholder="Activ inlocuire 2"></td><td><input type="number" id="actInl2Val" placeholder="0"></td><td><input type="number" id="actInl2Frec" min="1" placeholder="0"></td></tr>
+            <tr><td><input type="text" id="actInl3Nume" placeholder="Activ inlocuire 3"></td><td><input type="number" id="actInl3Val" placeholder="0"></td><td><input type="number" id="actInl3Frec" min="1" placeholder="0"></td></tr>
+            <tr><td><input type="text" id="actInl4Nume" placeholder="Activ inlocuire 4"></td><td><input type="number" id="actInl4Val" placeholder="0"></td><td><input type="number" id="actInl4Frec" min="1" placeholder="0"></td></tr>
+            <tr><td><input type="text" id="actInl5Nume" placeholder="Activ inlocuire 5"></td><td><input type="number" id="actInl5Val" placeholder="0"></td><td><input type="number" id="actInl5Frec" min="1" placeholder="0"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="showSection(5)">&#8592; Inapoi</button>
+      <button class="btn btn-primary" onclick="showSection(7)">Pasul urmator &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 8: PARAMETRI MONTE CARLO -->
+<div class="section" id="sec7">
+  <div class="section-header">
+    <div class="step-num">8</div>
+    <h2>Parametri Monte Carlo si Senzitivitate</h2>
+  </div>
+  <div class="section-body">
+    <div class="info-box">Parametri pentru simularea Monte Carlo si analiza de senzitivitate. Valorile implicite sunt recomandate pentru proiecte standard.</div>
+    <div class="subsection">
+      <div class="subsection-title">Parametri Variatie</div>
+      <div class="subsection-body">
+        <div class="form-group">
+          <label>Variatie venituri min (%)<span class="hint">Scadere maxima asteptata</span></label>
+          <input type="number" id="varVenMin" value="-30" step="5">
+        </div>
+        <div class="form-group">
+          <label>Variatie venituri max (%)<span class="hint">Crestere maxima asteptata</span></label>
+          <input type="number" id="varVenMax" value="30" step="5">
+        </div>
+        <div class="form-group">
+          <label>Variatie costuri min (%)<span class="hint">Scadere maxima costuri</span></label>
+          <input type="number" id="varCostMin" value="-10" step="5">
+        </div>
+        <div class="form-group">
+          <label>Variatie costuri max (%)<span class="hint">Crestere maxima costuri</span></label>
+          <input type="number" id="varCostMax" value="30" step="5">
+        </div>
+        <div class="form-group">
+          <label>Probabilitate intarziere (%)<span class="hint">Sansa de intarziere in implementare</span></label>
+          <input type="number" id="probIntarziere" value="20" min="0" max="100" step="5">
+        </div>
+        <div class="form-group">
+          <label>Cost overrun max (%)<span class="hint">Depasire maxima costuri</span></label>
+          <input type="number" id="costOverrun" value="25" min="0" max="100" step="5">
+        </div>
+      </div>
+    </div>
+    <div class="subsection">
+      <div class="subsection-title">Parametri Financiari</div>
+      <div class="subsection-body">
+        <div class="form-group">
+          <label>Rata de discount financiar (%)</label>
+          <input type="number" id="rataDiscFin" value="4" step="0.5">
+        </div>
+        <div class="form-group">
+          <label>Rata de discount social (%)</label>
+          <input type="number" id="rataDiscSoc" value="5" step="0.5">
+        </div>
+        <div class="form-group">
+          <label>Rata impozit profit (%)</label>
+          <input type="number" id="rataImpozit" value="16" step="1">
+        </div>
+        <div class="form-group">
+          <label>Nr angajati noi proiect</label>
+          <input type="number" id="angajatiNoi" value="8" min="0">
+        </div>
+        <div class="form-group">
+          <label>Cost mediu angajat/an (EUR)</label>
+          <input type="number" id="costAngajat" value="15000" min="0" step="500">
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="showSection(6)">&#8592; Inapoi</button>
+      <button class="btn btn-primary" onclick="showSection(8)">Rezumat & Export &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 9: REZUMAT & EXPORT -->
+<div class="section" id="sec8">
+  <div class="section-header">
+    <div class="step-num">9</div>
+    <h2>Rezumat si Export Date</h2>
+  </div>
+  <div class="section-body">
+    <div class="warning-box">Verificati toate datele inainte de export. Campurile calculate se actualizeaza automat.</div>
+
+    <div class="summary-card" id="summaryCompanie">
+      <h3 style="font-size:0.95rem; color:var(--primary); margin-bottom:0.5rem;">Date Companie</h3>
+      <div class="summary-row"><span class="label">Denumire:</span><span class="value" id="sumDenumire">-</span></div>
+      <div class="summary-row"><span class="label">Tip IMM:</span><span class="value" id="sumTip">-</span></div>
+      <div class="summary-row"><span class="label">Regiune:</span><span class="value" id="sumRegiune">-</span></div>
+      <div class="summary-row"><span class="label">CAEN:</span><span class="value" id="sumCAEN">-</span></div>
+      <div class="summary-row"><span class="label">Nr. angajati:</span><span class="value" id="sumAngajati">-</span></div>
+      <div class="summary-row"><span class="label">CA ultimul an:</span><span class="value" id="sumCA">-</span></div>
+    </div>
+
+    <div class="summary-card" id="summaryProiect">
+      <h3 style="font-size:0.95rem; color:var(--primary); margin-bottom:0.5rem;">Parametri Proiect</h3>
+      <div class="summary-row"><span class="label">Buget total:</span><span class="value" id="sumBuget">-</span></div>
+      <div class="summary-row"><span class="label">Grant solicitat:</span><span class="value" id="sumGrant">-</span></div>
+      <div class="summary-row"><span class="label">Contributie proprie:</span><span class="value" id="sumContrib">-</span></div>
+      <div class="summary-row"><span class="label">Durata implementare:</span><span class="value" id="sumDurata">-</span></div>
+      <div class="summary-row"><span class="label">Total venituri 5 ani:</span><span class="value" id="sumVenituri">-</span></div>
+      <div class="summary-row"><span class="label">Total costuri 5 ani:</span><span class="value" id="sumCosturi">-</span></div>
+      <div class="summary-row"><span class="label">Total investitie:</span><span class="value" id="sumInvestit">-</span></div>
+    </div>
+
+    <div class="summary-card">
+      <h3 style="font-size:0.95rem; color:var(--primary); margin-bottom:0.5rem;">Verificari</h3>
+      <div class="summary-row"><span class="label">Buget tipuri ajutor vs total:</span><span id="sumCheckBuget" class="status-badge">-</span></div>
+      <div class="summary-row"><span class="label">Investitie vs buget:</span><span id="sumCheckInvest" class="status-badge">-</span></div>
+    </div>
+
+    <div class="btn-row" style="justify-content:center; gap:1rem; flex-wrap:wrap;">
+      <button class="btn btn-success" onclick="exportExcel()" style="font-size:1rem; padding:0.8rem 2rem;">
+        Exporta Excel (.xlsx)
+      </button>
+      <button class="btn btn-primary" onclick="exportJSON()" style="font-size:1rem; padding:0.8rem 2rem;">
+        Exporta JSON
+      </button>
+      <button class="btn btn-secondary" onclick="window.print()">
+        Printeaza Formularul
+      </button>
+    </div>
+
+    <div class="btn-row" style="margin-top:0.5rem;">
+      <button class="btn btn-outline" onclick="showSection(7)">&#8592; Inapoi</button>
+      <button class="btn btn-outline" onclick="resetForm()">Resetare Formular</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="footer">
+  <p>STEP NV - Formular Analiza Monte Carlo | Generat automat | &copy; 2026</p>
+</div>
+
+<script>
+const totalSections = 9;
+let currentSection = 0;
+
+function showSection(idx) {
+  document.querySelectorAll('.section').forEach((s, i) => {
+    s.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.nav-tab').forEach((t, i) => {
+    t.classList.toggle('active', i === idx);
+  });
+  currentSection = idx;
+  updateProgress();
+  if (idx === 8) updateSummary();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateProgress() {
+  const pct = Math.round(((currentSection + 1) / totalSections) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function v(id) { return parseFloat(document.getElementById(id).value) || 0; }
+function sv(id, val) { document.getElementById(id).value = Math.round(val); }
+function fmt(n) { return n.toLocaleString('ro-RO'); }
+
+function calcBuget() {
+  sv('contProprie', v('bugetTotal') - v('valNerambursabil'));
+}
+
+function calcAjutor() {
+  const types = [
+    { t: 'ajReg', intId: 'ajRegInt' },
+    { t: 'cdiInd', intId: 'cdiIndInt' },
+    { t: 'cdiExp', intId: 'cdiExpInt' },
+    { t: 'minimis', intId: 'minimisInt' }
+  ];
+  let totalT = 0, totalG = 0, totalC = 0;
+  types.forEach(({ t, intId }) => {
+    const total = v(t + 'Total');
+    const int = v(intId) / 100;
+    const grant = Math.round(total * int);
+    const cofin = total - grant;
+    sv(t + 'Grant', grant);
+    sv(t + 'Cofin', cofin);
+    totalT += total;
+    totalG += grant;
+    totalC += cofin;
+  });
+  sv('totalAjutor', totalT);
+  sv('totalGrant', totalG);
+  sv('totalCofin', totalC);
+
+  const buget = v('bugetTotal');
+  const statusBuget = document.getElementById('statusBuget');
+  if (buget > 0 && totalT === buget) {
+    statusBuget.className = 'status-badge status-ok';
+    statusBuget.textContent = 'OK';
+  } else if (buget > 0) {
+    statusBuget.className = 'status-badge status-error';
+    statusBuget.textContent = 'DIFERENTA: ' + fmt(totalT - buget) + ' EUR';
+  } else {
+    statusBuget.className = 'status-badge status-warning';
+    statusBuget.textContent = 'Completati bugetul total';
+  }
+
+  const neramb = v('valNerambursabil');
+  const statusGrant = document.getElementById('statusGrant');
+  if (neramb > 0 && totalG === neramb) {
+    statusGrant.className = 'status-badge status-ok';
+    statusGrant.textContent = 'OK';
+  } else if (neramb > 0 && totalG > 0) {
+    statusGrant.className = 'status-badge status-warning';
+    statusGrant.textContent = 'AJUSTATI (dif: ' + fmt(totalG - neramb) + ')';
+  } else {
+    statusGrant.className = 'status-badge';
+    statusGrant.textContent = '-';
+  }
+}
+
+function calcInvestit() {
+  const ids = ['invEchip','invUtil','invSoft','invPersCDI','invCercContr','invBrevete','invConsult','invMarketing','invAudit','invPublic','invAcces','invAlte'];
+  const total = ids.reduce((s, id) => s + v(id), 0);
+  sv('totalInvestit', total);
+
+  const buget = v('bugetTotal');
+  const st = document.getElementById('statusInvestit');
+  if (buget > 0 && total === buget) {
+    st.className = 'status-badge status-ok';
+    st.textContent = 'OK';
+  } else if (buget > 0) {
+    st.className = 'status-badge status-error';
+    st.textContent = 'DIFERENTA: ' + fmt(total - buget) + ' EUR';
+  } else {
+    st.className = 'status-badge status-warning';
+    st.textContent = 'Completati bugetul total';
+  }
+}
+
+function calcVenCost() {
+  let tv = 0, tc = 0;
+  for (let i = 1; i <= 5; i++) { tv += v('venAn' + i); tc += v('costAn' + i); }
+  sv('totalVen', tv);
+  sv('totalCost', tc);
+}
+
+function calcVenDet() {
+  for (let an = 1; an <= 5; an++) {
+    let tot = 0;
+    document.querySelectorAll('.venDet[data-an="' + an + '"]').forEach(inp => {
+      tot += parseFloat(inp.value) || 0;
+    });
+    sv('totalVenDet' + an, tot);
+  }
+}
+
+function calcChDet() {
+  for (let an = 1; an <= 5; an++) {
+    let tot = 0;
+    document.querySelectorAll('.chDet[data-an="' + an + '"]').forEach(inp => {
+      tot += parseFloat(inp.value) || 0;
+    });
+    sv('totalChDet' + an, tot);
+  }
+}
+
+function calcBilant() {
+  for (const suffix of ['N1', 'N']) {
+    sv('totalActImob' + suffix, v('bilCorp' + suffix) + v('bilNecorp' + suffix) + v('bilFin' + suffix));
+    sv('totalActCirc' + suffix, v('bilStoc' + suffix) + v('bilCreante' + suffix) + v('bilInvTS' + suffix) + v('bilCasa' + suffix));
+    sv('totalCap' + suffix, v('bilCap' + suffix) + v('bilPrime' + suffix) + v('bilReev' + suffix) + v('bilRez' + suffix) + v('bilProfRep' + suffix) + v('bilProfEx' + suffix) - v('bilRepart' + suffix));
+  }
+}
+
+function calcPL() {
+  for (const suffix of ['N1', 'N']) {
+    const profit = v('plCA' + suffix) + v('plAlteVen' + suffix) + v('plVenFin' + suffix)
+      - v('plMat' + suffix) - v('plPers' + suffix) - v('plAmort' + suffix)
+      - v('plAlteCh' + suffix) - v('plChFin' + suffix) - v('plImp' + suffix);
+    sv('plProfit' + suffix, profit);
+  }
+}
+
+function updateSummary() {
+  document.getElementById('sumDenumire').textContent = document.getElementById('denumire').value || '-';
+  document.getElementById('sumTip').textContent = document.getElementById('tipIMM').value || '-';
+  document.getElementById('sumRegiune').textContent = document.getElementById('regiune').value || '-';
+  document.getElementById('sumCAEN').textContent = document.getElementById('caen').value || '-';
+  document.getElementById('sumAngajati').textContent = v('nrAngajati') || '-';
+  document.getElementById('sumCA').textContent = v('caUltimulAn') ? fmt(v('caUltimulAn')) + ' EUR' : '-';
+  document.getElementById('sumBuget').textContent = v('bugetTotal') ? fmt(v('bugetTotal')) + ' EUR' : '-';
+  document.getElementById('sumGrant').textContent = v('valNerambursabil') ? fmt(v('valNerambursabil')) + ' EUR' : '-';
+  document.getElementById('sumContrib').textContent = v('contProprie') ? fmt(v('contProprie')) + ' EUR' : '-';
+  document.getElementById('sumDurata').textContent = v('durataImpl') ? v('durataImpl') + ' luni' : '-';
+  document.getElementById('sumVenituri').textContent = v('totalVen') ? fmt(v('totalVen')) + ' EUR' : '-';
+  document.getElementById('sumCosturi').textContent = v('totalCost') ? fmt(v('totalCost')) + ' EUR' : '-';
+  document.getElementById('sumInvestit').textContent = v('totalInvestit') ? fmt(v('totalInvestit')) + ' EUR' : '-';
+
+  const buget = v('bugetTotal');
+  const ajTotal = v('totalAjutor');
+  const invTotal = v('totalInvestit');
+
+  const cb = document.getElementById('sumCheckBuget');
+  if (buget > 0 && ajTotal === buget) { cb.className = 'status-badge status-ok'; cb.textContent = 'OK'; }
+  else if (buget > 0) { cb.className = 'status-badge status-error'; cb.textContent = 'DIFERENTA'; }
+  else { cb.className = 'status-badge'; cb.textContent = '-'; }
+
+  const ci = document.getElementById('sumCheckInvest');
+  if (buget > 0 && invTotal === buget) { ci.className = 'status-badge status-ok'; ci.textContent = 'OK'; }
+  else if (buget > 0) { ci.className = 'status-badge status-error'; ci.textContent = 'DIFERENTA'; }
+  else { ci.className = 'status-badge'; ci.textContent = '-'; }
+}
+
+function collectAllData() {
+  const data = {};
+  // Companie
+  data.companie = {
+    denumire: document.getElementById('denumire').value,
+    tipIMM: document.getElementById('tipIMM').value,
+    regiune: document.getElementById('regiune').value,
+    caen: document.getElementById('caen').value,
+    subdomeniu: document.getElementById('subdomeniu').value,
+    nrAngajati: v('nrAngajati'),
+    caUltimulAn: v('caUltimulAn')
+  };
+  // Proiect
+  data.proiect = {
+    bugetTotal: v('bugetTotal'),
+    valNerambursabil: v('valNerambursabil'),
+    contProprie: v('contProprie'),
+    durataImpl: v('durataImpl'),
+    durataDurab: v('durataDurab'),
+    cursEUR: v('cursEUR'),
+    tvaImpoz: document.getElementById('tvaImpoz').value,
+    cotaTVA: v('cotaTVA'),
+    rataActualizare: v('rataActualizare'),
+    dataSemnare: document.getElementById('dataSemnare').value,
+    durataViata: v('durataViata')
+  };
+  // Tipuri ajutor
+  data.ajutor = {
+    regional: { total: v('ajRegTotal'), intensitate: v('ajRegInt'), grant: v('ajRegGrant'), cofinantare: v('ajRegCofin') },
+    cdiIndustrial: { total: v('cdiIndTotal'), intensitate: v('cdiIndInt'), grant: v('cdiIndGrant'), cofinantare: v('cdiIndCofin') },
+    cdiExperimental: { total: v('cdiExpTotal'), intensitate: v('cdiExpInt'), grant: v('cdiExpGrant'), cofinantare: v('cdiExpCofin') },
+    minimis: { total: v('minimisTotal'), intensitate: v('minimisInt'), grant: v('minimisGrant'), cofinantare: v('minimisCofin') },
+    totalAjutor: v('totalAjutor'),
+    totalGrant: v('totalGrant'),
+    totalCofin: v('totalCofin')
+  };
+  // Investitie
+  data.investitie = {
+    echipamente: v('invEchip'), utilaje: v('invUtil'), software: v('invSoft'),
+    personalCDI: v('invPersCDI'), cercetareContr: v('invCercContr'), brevete: v('invBrevete'),
+    consultanta: v('invConsult'), marketing: v('invMarketing'), audit: v('invAudit'),
+    publicitate: v('invPublic'), accesibilitate: v('invAcces'), alteCosturi: v('invAlte'),
+    total: v('totalInvestit')
+  };
+  // Venituri & Costuri
+  data.venituri = []; data.costuri = [];
+  for (let i = 1; i <= 5; i++) { data.venituri.push(v('venAn' + i)); data.costuri.push(v('costAn' + i)); }
+  data.totalVenituri = v('totalVen');
+  data.totalCosturi = v('totalCost');
+
+  // Venituri detaliate
+  data.venituriDetaliate = {};
+  ['vanzari','licente','economii','consult','alteVen','diverse'].forEach(cat => {
+    data.venituriDetaliate[cat] = [];
+    for (let an = 1; an <= 5; an++) {
+      const inp = document.querySelector(`.venDet[data-an="${an}"][data-cat="${cat}"]`);
+      data.venituriDetaliate[cat].push(parseFloat(inp?.value) || 0);
+    }
+  });
+
+  // Cheltuieli detaliate
+  data.cheltuieliDetaliate = {};
+  ['materiale','utilitati','personal','mentenanta','servicii','alteCh'].forEach(cat => {
+    data.cheltuieliDetaliate[cat] = [];
+    for (let an = 1; an <= 5; an++) {
+      const inp = document.querySelector(`.chDet[data-an="${an}"][data-cat="${cat}"]`);
+      data.cheltuieliDetaliate[cat].push(parseFloat(inp?.value) || 0);
+    }
+  });
+
+  // Bilant
+  data.bilant = {};
+  const bilFields = ['bilCorpN1','bilCorpN','bilNecorpN1','bilNecorpN','bilFinN1','bilFinN',
+    'bilStocN1','bilStocN','bilCreanteN1','bilCreanteN','bilInvTSN1','bilInvTSN','bilCasaN1','bilCasaN',
+    'bilChAvN1','bilChAvN','bilDat1N1','bilDat1N','bilDatMN1','bilDatMN','bilProvN1','bilProvN','bilVenAvN1','bilVenAvN',
+    'bilCapN1','bilCapN','bilPrimeN1','bilPrimeN','bilReevN1','bilReevN','bilRezN1','bilRezN',
+    'bilProfRepN1','bilProfRepN','bilProfExN1','bilProfExN','bilRepartN1','bilRepartN'];
+  bilFields.forEach(f => data.bilant[f] = v(f));
+
+  // P&L
+  data.pl = {};
+  const plFields = ['plCAN1','plCAN','plAlteVenN1','plAlteVenN','plVenFinN1','plVenFinN',
+    'plMatN1','plMatN','plPersN1','plPersN','plAmortN1','plAmortN',
+    'plAlteChN1','plAlteChN','plChFinN1','plChFinN','plImpN1','plImpN'];
+  plFields.forEach(f => data.pl[f] = v(f));
+
+  // Existente
+  data.existente = {
+    ca: v('exCA'), alteVen: v('exAlteVen'), venFin: v('exVenFin'),
+    matPrime: v('exMatPrime'), pers: v('exPers'), amort: v('exAmort'),
+    alteCh: v('exAlteCh'), chFin: v('exChFin')
+  };
+
+  // Active durate
+  data.activeDurate = [
+    { denumire: 'Echipamente productie', durata: v('durEchip'), valoare: v('valEchip') },
+    { denumire: 'Utilaje industriale', durata: v('durUtil'), valoare: v('valUtil') },
+    { denumire: 'Software/licente', durata: v('durSoft'), valoare: v('valSoft') },
+    { denumire: 'Brevete/licente externe', durata: v('durBrevete'), valoare: v('valBrevete') },
+    { denumire: 'Alte costuri (echipamente)', durata: v('durAlte'), valoare: v('valAlte') }
+  ];
+
+  // Active inlocuire
+  data.activeInlocuire = [];
+  for (let i = 1; i <= 5; i++) {
+    data.activeInlocuire.push({
+      denumire: document.getElementById('actInl' + i + 'Nume').value,
+      valoare: v('actInl' + i + 'Val'),
+      frecventa: v('actInl' + i + 'Frec')
+    });
+  }
+
+  // Monte Carlo
+  data.monteCarlo = {
+    varVenMin: v('varVenMin'), varVenMax: v('varVenMax'),
+    varCostMin: v('varCostMin'), varCostMax: v('varCostMax'),
+    probIntarziere: v('probIntarziere'), costOverrun: v('costOverrun'),
+    rataDiscFin: v('rataDiscFin'), rataDiscSoc: v('rataDiscSoc'),
+    rataImpozit: v('rataImpozit'), angajatiNoi: v('angajatiNoi'),
+    costAngajat: v('costAngajat')
+  };
+
+  data.dataCompletare = new Date().toISOString().split('T')[0];
+  return data;
+}
+
+function exportExcel() {
+  const data = collectAllData();
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Parametri Input (matches original structure)
+  const ws1Data = [
+    ['COMPANIE', '', '', ''],
+    ['Denumire firma', '', data.companie.denumire, ''],
+    ['Tip IMM', '', data.companie.tipIMM, ''],
+    ['Regiune', '', data.companie.regiune, ''],
+    ['CAEN principal', '', data.companie.caen, ''],
+    ['Subdomeniu SNCISI', '', data.companie.subdomeniu, ''],
+    ['Nr. angajati actual', '', data.companie.nrAngajati, ''],
+    ['CA ultimul an (EUR)', '', data.companie.caUltimulAn, ''],
+    [''],
+    ['PARAMETRI PROIECT', '', '', ''],
+    ['Buget total proiect (EUR)', '', data.proiect.bugetTotal, ''],
+    ['Valoare nerambursabil solicitata (EUR)', '', data.proiect.valNerambursabil, ''],
+    ['Contributie proprie (EUR)', '', data.proiect.contProprie, ''],
+    ['Durata implementare (luni)', '', data.proiect.durataImpl, ''],
+    ['Durata durabilitate (luni)', '', data.proiect.durataDurab, ''],
+    [''],
+    ['DISTRIBUTIE BUGET PE TIPURI AJUTOR', '', '', ''],
+    ['Ajutor Regional - Total (EUR)', '', data.ajutor.regional.total, ''],
+    ['Intensitate ajutor regional (%)', '', data.ajutor.regional.intensitate / 100, ''],
+    ['CDI Cercetare industriala - Total (EUR)', '', data.ajutor.cdiIndustrial.total, ''],
+    ['Intensitate CDI industrial (%)', '', data.ajutor.cdiIndustrial.intensitate / 100, ''],
+    ['CDI Dezvoltare experimentala - Total (EUR)', '', data.ajutor.cdiExperimental.total, ''],
+    ['Intensitate CDI experimental (%)', '', data.ajutor.cdiExperimental.intensitate / 100, ''],
+    ['Minimis - Total (EUR)', '', data.ajutor.minimis.total, ''],
+    ['Intensitate minimis (%)', '', data.ajutor.minimis.intensitate / 100, ''],
+    ['Total verificare (formula)', '', data.ajutor.totalAjutor, ''],
+    ['Status verificare', '', data.ajutor.totalAjutor === data.proiect.bugetTotal ? 'OK' : 'DIFERENTA', ''],
+    [''],
+    ['CALCUL COFINANTARE PER TIP AJUTOR', '', '', ''],
+    ['Grant regional', '', data.ajutor.regional.grant, ''],
+    ['Cofinantare regional', '', data.ajutor.regional.cofinantare, ''],
+    ['Grant CDI industrial', '', data.ajutor.cdiIndustrial.grant, ''],
+    ['Cofinantare CDI industrial', '', data.ajutor.cdiIndustrial.cofinantare, ''],
+    ['Grant CDI experimental', '', data.ajutor.cdiExperimental.grant, ''],
+    ['Cofinantare CDI experimental', '', data.ajutor.cdiExperimental.cofinantare, ''],
+    ['Grant minimis', '', data.ajutor.minimis.grant, ''],
+    ['Cofinantare minimis', '', data.ajutor.minimis.cofinantare, ''],
+    ['Total grant calculat', '', data.ajutor.totalGrant, ''],
+    ['Total cofinantare proprie', '', data.ajutor.totalCofin, ''],
+    [''],
+    [''],
+    ['PROIECTII VENITURI (Y1-Y5)', '', '', ''],
+    ['Venituri An 1 (EUR)', '', data.venituri[0], ''],
+    ['Venituri An 2 (EUR)', '', data.venituri[1], ''],
+    ['Venituri An 3 (EUR)', '', data.venituri[2], ''],
+    ['Venituri An 4 (EUR)', '', data.venituri[3], ''],
+    ['Venituri An 5 (EUR)', '', data.venituri[4], ''],
+    ['Total venituri 5 ani', '', data.totalVenituri, ''],
+    [''],
+    ['COSTURI OPERATIONALE (Y1-Y5)', '', '', ''],
+    ['Costuri operationale An 1', '', data.costuri[0], ''],
+    ['Costuri operationale An 2', '', data.costuri[1], ''],
+    ['Costuri operationale An 3', '', data.costuri[2], ''],
+    ['Costuri operationale An 4', '', data.costuri[3], ''],
+    ['Costuri operationale An 5', '', data.costuri[4], ''],
+    ['Total costuri 5 ani', '', data.totalCosturi, ''],
+    [''],
+    ['DETALIERE INVESTITIE', '', '', ''],
+    ['Echipamente productie', '', data.investitie.echipamente, ''],
+    ['Utilaje industriale', '', data.investitie.utilaje, ''],
+    ['Software/licente', '', data.investitie.software, ''],
+    ['Personal CDI cercetare', '', data.investitie.personalCDI, ''],
+    ['Cercetare contractuala', '', data.investitie.cercetareContr, ''],
+    ['Brevete/licente externe', '', data.investitie.brevete, ''],
+    ['Consultanta (A1 + management)', '', data.investitie.consultanta, ''],
+    ['Marketing/piata (A6)', '', data.investitie.marketing, ''],
+    ['Audit tehnic (A9)', '', data.investitie.audit, ''],
+    ['Publicitate (A7)', '', data.investitie.publicitate, ''],
+    ['Accesibilitate (A10)', '', data.investitie.accesibilitate, ''],
+    ['Alte costuri', '', data.investitie.alteCosturi, ''],
+    ['Total investitie', '', data.investitie.total, ''],
+    ['Verificare vs buget', '', data.investitie.total === data.proiect.bugetTotal ? 'OK' : 'DIFERENTA', ''],
+    [''],
+    ['PARAMETRI MONTE CARLO & SENZITIVITATE', '', '', ''],
+    ['Variatie venituri min (%)', '', data.monteCarlo.varVenMin / 100, ''],
+    ['Variatie venituri max (%)', '', data.monteCarlo.varVenMax / 100, ''],
+    ['Variatie costuri min (%)', '', data.monteCarlo.varCostMin / 100, ''],
+    ['Variatie costuri max (%)', '', data.monteCarlo.varCostMax / 100, ''],
+    ['Probabilitate intarziere (%)', '', data.monteCarlo.probIntarziere / 100, ''],
+    ['Cost overrun max (%)', '', data.monteCarlo.costOverrun / 100, ''],
+    ['Rata de discount financiar (%)', '', data.monteCarlo.rataDiscFin / 100, ''],
+    ['Rata de discount social (%)', '', data.monteCarlo.rataDiscSoc / 100, ''],
+    ['Rata impozit profit (%)', '', data.monteCarlo.rataImpozit / 100, ''],
+    ['Nr angajati noi proiect', '', data.monteCarlo.angajatiNoi, ''],
+    ['Cost mediu angajat/an (EUR)', '', data.monteCarlo.costAngajat, ''],
+    [''],
+    [''],
+    ['PARAMETRI OFICIALI ANEXA III.5', '', '', ''],
+    ['Curs INFOREURO (lei/EUR)', '', data.proiect.cursEUR, ''],
+    ['TVA - persoana impozabila', '', data.proiect.tvaImpoz, ''],
+    ['Cota TVA (%)', '', data.proiect.cotaTVA / 100, ''],
+    ['Rata actualizare financiara oficiala EC (%)', '', data.proiect.rataActualizare / 100, ''],
+    ['Data estimata semnare contract', '', data.proiect.dataSemnare, ''],
+    ['Perioada implementare (luni)', '', data.proiect.durataImpl, ''],
+    ['Perioada durabilitate (luni)', '', data.proiect.durataDurab, ''],
+    ['Durata viata economica proiect (ani)', '', data.proiect.durataViata, ''],
+  ];
+  const ws1 = XLSX.utils.aoa_to_sheet(ws1Data);
+  ws1['!cols'] = [{ wch: 42 }, { wch: 5 }, { wch: 30 }, { wch: 20 }];
+  XLSX.utils.book_append_sheet(wb, ws1, '1. Parametri Input');
+
+  // Sheet 2: Bilant & P&L
+  const ws2Data = [
+    ['BILANT PRESCURTAT', '', 'N-1 (lei)', 'N (lei)'],
+    ['A. ACTIVE IMOBILIZATE', '', '', ''],
+    ['I. Imobilizari corporale', '', data.bilant.bilCorpN1, data.bilant.bilCorpN],
+    ['II. Imobilizari necorporale', '', data.bilant.bilNecorpN1, data.bilant.bilNecorpN],
+    ['III. Imobilizari financiare', '', data.bilant.bilFinN1, data.bilant.bilFinN],
+    ['TOTAL ACTIVE IMOBILIZATE', '', v('totalActImobN1'), v('totalActImobN')],
+    ['B. ACTIVE CIRCULANTE', '', '', ''],
+    ['I. Stocuri', '', data.bilant.bilStocN1, data.bilant.bilStocN],
+    ['II. Creante', '', data.bilant.bilCreanteN1, data.bilant.bilCreanteN],
+    ['III. Investitii pe termen scurt', '', data.bilant.bilInvTSN1, data.bilant.bilInvTSN],
+    ['IV. Casa si conturi la banci', '', data.bilant.bilCasaN1, data.bilant.bilCasaN],
+    ['TOTAL ACTIVE CIRCULANTE', '', v('totalActCircN1'), v('totalActCircN')],
+    ['C. Cheltuieli in avans', '', data.bilant.bilChAvN1, data.bilant.bilChAvN],
+    ['D. Datorii < 1 an', '', data.bilant.bilDat1N1, data.bilant.bilDat1N],
+    ['E. Datorii > 1 an', '', data.bilant.bilDatMN1, data.bilant.bilDatMN],
+    ['F. Provizioane', '', data.bilant.bilProvN1, data.bilant.bilProvN],
+    ['Venituri in avans', '', data.bilant.bilVenAvN1, data.bilant.bilVenAvN],
+    ['J. CAPITAL SI REZERVE', '', '', ''],
+    ['I. Capital subscris varsat', '', data.bilant.bilCapN1, data.bilant.bilCapN],
+    ['II. Prime de capital', '', data.bilant.bilPrimeN1, data.bilant.bilPrimeN],
+    ['III. Rezerve din reevaluare', '', data.bilant.bilReevN1, data.bilant.bilReevN],
+    ['IV. Rezerve', '', data.bilant.bilRezN1, data.bilant.bilRezN],
+    ['V. Profitul/pierderea reportata', '', data.bilant.bilProfRepN1, data.bilant.bilProfRepN],
+    ['VI. Profitul/pierderea exercitiului', '', data.bilant.bilProfExN1, data.bilant.bilProfExN],
+    ['VII. Repartizarea profitului', '', data.bilant.bilRepartN1, data.bilant.bilRepartN],
+    ['TOTAL CAPITALURI PROPRII', '', v('totalCapN1'), v('totalCapN')],
+    [''],
+    ['CONT PROFIT SI PIERDERE', 'Semn', 'N-1 (lei)', 'N (lei)'],
+    ['1. Cifra de afaceri neta', '(+)', data.pl.plCAN1, data.pl.plCAN],
+    ['2. Alte venituri din exploatare', '(+)', data.pl.plAlteVenN1, data.pl.plAlteVenN],
+    ['3. Alte venituri financiare', '(+)', data.pl.plVenFinN1, data.pl.plVenFinN],
+    ['4. Costul materiilor prime', '(-)', data.pl.plMatN1, data.pl.plMatN],
+    ['5. Cheltuieli cu personalul', '(-)', data.pl.plPersN1, data.pl.plPersN],
+    ['6. Ajustari de valoare (amortizare)', '(-)', data.pl.plAmortN1, data.pl.plAmortN],
+    ['7. Alte cheltuieli din exploatare', '(-)', data.pl.plAlteChN1, data.pl.plAlteChN],
+    ['8. Alte cheltuieli financiare', '(-)', data.pl.plChFinN1, data.pl.plChFinN],
+    ['9. Impozite', '(-)', data.pl.plImpN1, data.pl.plImpN],
+    ['10. PROFIT NET EXERCITIU', '', v('plProfitN1'), v('plProfitN')],
+    [''],
+    ['VENITURI/CHELTUIELI EXISTENTE SOCIETATE', '', 'Valoare anuala (lei)', ''],
+    ['Cifra de afaceri neta existenta', '', data.existente.ca, ''],
+    ['Alte venituri exploatare existente', '', data.existente.alteVen, ''],
+    ['Alte venituri financiare existente', '', data.existente.venFin, ''],
+    ['Cost materii prime existente', '', data.existente.matPrime, ''],
+    ['Cheltuieli personal existente', '', data.existente.pers, ''],
+    ['Ajustari valoare (amortizare existenta)', '', data.existente.amort, ''],
+    ['Alte cheltuieli exploatare existente', '', data.existente.alteCh, ''],
+    ['Alte cheltuieli financiare existente', '', data.existente.chFin, ''],
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(ws2Data);
+  ws2['!cols'] = [{ wch: 42 }, { wch: 8 }, { wch: 18 }, { wch: 18 }];
+  XLSX.utils.book_append_sheet(wb, ws2, '2. Bilant & PL');
+
+  // Sheet 3: Venituri & Cheltuieli Detaliate
+  const venCats = { vanzari: 'Venituri din vanzari produse/servicii noi', licente: 'Venituri din licentiere/brevete', economii: 'Economii din eficientizare procese', consult: 'Venituri din consultanta tehnica', alteVen: 'Alte venituri din exploatare proiect', diverse: 'Venituri diverse' };
+  const chCats = { materiale: 'Cheltuieli materiale', utilitati: 'Cheltuieli cu utilitatile', personal: 'Cheltuieli cu personalul', mentenanta: 'Cheltuieli mentenanta/reparatii', servicii: 'Cheltuieli servicii buget proiect', alteCh: 'Alte cheltuieli directe' };
+
+  const ws3Data = [
+    ['VENITURI MONETARE PROIECT DETALIATE (lei/an)', '', 'An 1', 'An 2', 'An 3', 'An 4', 'An 5'],
+  ];
+  Object.entries(venCats).forEach(([k, label]) => {
+    ws3Data.push([label, 'lei/an', ...data.venituriDetaliate[k]]);
+  });
+  ws3Data.push(['TOTAL VENITURI PROIECT', '', v('totalVenDet1'), v('totalVenDet2'), v('totalVenDet3'), v('totalVenDet4'), v('totalVenDet5')]);
+  ws3Data.push(['']);
+  ws3Data.push(['CHELTUIELI MONETARE PROIECT DETALIATE (lei/an)', '', 'An 1', 'An 2', 'An 3', 'An 4', 'An 5']);
+  Object.entries(chCats).forEach(([k, label]) => {
+    ws3Data.push([label, 'lei/an', ...data.cheltuieliDetaliate[k]]);
+  });
+  ws3Data.push(['TOTAL CHELTUIELI PROIECT', '', v('totalChDet1'), v('totalChDet2'), v('totalChDet3'), v('totalChDet4'), v('totalChDet5')]);
+
+  const ws3 = XLSX.utils.aoa_to_sheet(ws3Data);
+  ws3['!cols'] = [{ wch: 42 }, { wch: 8 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }];
+  XLSX.utils.book_append_sheet(wb, ws3, '3. Venituri & Cheltuieli Det');
+
+  // Sheet 4: Active & Durate
+  const ws4Data = [
+    ['DURATE UTILIZARE ACTIVE', '', '', ''],
+    ['Denumire activ', 'Durata utilizare (ani)', 'Valoare inventar (lei)', ''],
+  ];
+  data.activeDurate.forEach(a => ws4Data.push([a.denumire, a.durata, a.valoare, '']));
+  ws4Data.push(['']);
+  ws4Data.push(['ACTIVE INLOCUIRE DURATA SCURTA', '', '', '']);
+  ws4Data.push(['Denumire activ', 'Valoare inventar (lei)', 'Frecventa inlocuire (ani)', '']);
+  data.activeInlocuire.forEach(a => ws4Data.push([a.denumire, a.valoare, a.frecventa, '']));
+
+  const ws4 = XLSX.utils.aoa_to_sheet(ws4Data);
+  ws4['!cols'] = [{ wch: 30 }, { wch: 22 }, { wch: 25 }, { wch: 15 }];
+  XLSX.utils.book_append_sheet(wb, ws4, '4. Active & Durate');
+
+  // Sheet 5: Metadata
+  const ws5Data = [
+    ['DATA COMPLETARE', data.dataCompletare],
+    ['EXPORTAT DIN', 'Formular STEP NV Monte Carlo'],
+    ['VERSIUNE', '1.0'],
+  ];
+  const ws5 = XLSX.utils.aoa_to_sheet(ws5Data);
+  XLSX.utils.book_append_sheet(wb, ws5, 'Metadata');
+
+  const filename = 'STEP_NV_' + (data.companie.denumire || 'Client').replace(/[^a-zA-Z0-9]/g, '_') + '_' + data.dataCompletare + '.xlsx';
+  XLSX.writeFile(wb, filename);
+}
+
+function exportJSON() {
+  const data = collectAllData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'STEP_NV_' + (data.companie.denumire || 'Client').replace(/[^a-zA-Z0-9]/g, '_') + '_' + data.dataCompletare + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function resetForm() {
+  if (confirm('Sigur doriti sa resetati toate datele din formular?')) {
+    document.querySelectorAll('input:not([readonly])').forEach(inp => {
+      if (inp.type === 'number') inp.value = '';
+      else if (inp.type === 'text') inp.value = '';
+      else if (inp.type === 'date') inp.value = '2027-01-01';
+    });
+    document.querySelectorAll('select').forEach(sel => sel.selectedIndex = 0);
+    document.querySelectorAll('input[readonly]').forEach(inp => inp.value = '');
+    // Reset defaults
+    document.getElementById('cursEUR').value = '4.9638';
+    document.getElementById('cotaTVA').value = '19';
+    document.getElementById('rataActualizare').value = '9.31';
+    document.getElementById('durataViata').value = '10';
+    document.getElementById('minimisInt').value = '100';
+    document.getElementById('varVenMin').value = '-30';
+    document.getElementById('varVenMax').value = '30';
+    document.getElementById('varCostMin').value = '-10';
+    document.getElementById('varCostMax').value = '30';
+    document.getElementById('probIntarziere').value = '20';
+    document.getElementById('costOverrun').value = '25';
+    document.getElementById('rataDiscFin').value = '4';
+    document.getElementById('rataDiscSoc').value = '5';
+    document.getElementById('rataImpozit').value = '16';
+    document.getElementById('angajatiNoi').value = '8';
+    document.getElementById('costAngajat').value = '15000';
+    document.getElementById('durEchip').value = '8';
+    document.getElementById('durUtil').value = '10';
+    document.getElementById('durSoft').value = '3';
+    document.getElementById('durBrevete').value = '5';
+    document.getElementById('durAlte').value = '5';
+    showSection(0);
+  }
+}
+
+// Auto-save to localStorage
+function autoSave() {
+  const data = collectAllData();
+  try { localStorage.setItem('stepnv_formdata', JSON.stringify(data)); } catch(e) {}
+}
+
+function autoLoad() {
+  try {
+    const saved = localStorage.getItem('stepnv_formdata');
+    if (!saved) return;
+    const data = JSON.parse(saved);
+    if (!data || !data.companie) return;
+
+    document.getElementById('denumire').value = data.companie.denumire || '';
+    document.getElementById('tipIMM').value = data.companie.tipIMM || '';
+    document.getElementById('regiune').value = data.companie.regiune || '';
+    document.getElementById('caen').value = data.companie.caen || '';
+    document.getElementById('subdomeniu').value = data.companie.subdomeniu || '';
+    if (data.companie.nrAngajati) document.getElementById('nrAngajati').value = data.companie.nrAngajati;
+    if (data.companie.caUltimulAn) document.getElementById('caUltimulAn').value = data.companie.caUltimulAn;
+
+    if (data.proiect) {
+      if (data.proiect.bugetTotal) document.getElementById('bugetTotal').value = data.proiect.bugetTotal;
+      if (data.proiect.valNerambursabil) document.getElementById('valNerambursabil').value = data.proiect.valNerambursabil;
+      if (data.proiect.durataImpl) document.getElementById('durataImpl').value = data.proiect.durataImpl;
+      if (data.proiect.durataDurab) document.getElementById('durataDurab').value = data.proiect.durataDurab;
+      if (data.proiect.cursEUR) document.getElementById('cursEUR').value = data.proiect.cursEUR;
+      document.getElementById('tvaImpoz').value = data.proiect.tvaImpoz || 'DA';
+      if (data.proiect.cotaTVA) document.getElementById('cotaTVA').value = data.proiect.cotaTVA;
+      if (data.proiect.rataActualizare) document.getElementById('rataActualizare').value = data.proiect.rataActualizare;
+      if (data.proiect.dataSemnare) document.getElementById('dataSemnare').value = data.proiect.dataSemnare;
+      if (data.proiect.durataViata) document.getElementById('durataViata').value = data.proiect.durataViata;
+    }
+
+    if (data.ajutor) {
+      if (data.ajutor.regional) { document.getElementById('ajRegTotal').value = data.ajutor.regional.total || ''; document.getElementById('ajRegInt').value = data.ajutor.regional.intensitate || ''; }
+      if (data.ajutor.cdiIndustrial) { document.getElementById('cdiIndTotal').value = data.ajutor.cdiIndustrial.total || ''; document.getElementById('cdiIndInt').value = data.ajutor.cdiIndustrial.intensitate || ''; }
+      if (data.ajutor.cdiExperimental) { document.getElementById('cdiExpTotal').value = data.ajutor.cdiExperimental.total || ''; document.getElementById('cdiExpInt').value = data.ajutor.cdiExperimental.intensitate || ''; }
+      if (data.ajutor.minimis) { document.getElementById('minimisTotal').value = data.ajutor.minimis.total || ''; }
+    }
+
+    const invMap = { echipamente:'invEchip', utilaje:'invUtil', software:'invSoft', personalCDI:'invPersCDI', cercetareContr:'invCercContr', brevete:'invBrevete', consultanta:'invConsult', marketing:'invMarketing', audit:'invAudit', publicitate:'invPublic', accesibilitate:'invAcces', alteCosturi:'invAlte' };
+    if (data.investitie) Object.entries(invMap).forEach(([k, id]) => { if (data.investitie[k]) document.getElementById(id).value = data.investitie[k]; });
+
+    if (data.venituri) data.venituri.forEach((v, i) => { if (v) document.getElementById('venAn' + (i+1)).value = v; });
+    if (data.costuri) data.costuri.forEach((v, i) => { if (v) document.getElementById('costAn' + (i+1)).value = v; });
+
+    if (data.monteCarlo) {
+      const mcMap = { varVenMin:'varVenMin', varVenMax:'varVenMax', varCostMin:'varCostMin', varCostMax:'varCostMax', probIntarziere:'probIntarziere', costOverrun:'costOverrun', rataDiscFin:'rataDiscFin', rataDiscSoc:'rataDiscSoc', rataImpozit:'rataImpozit', angajatiNoi:'angajatiNoi', costAngajat:'costAngajat' };
+      Object.entries(mcMap).forEach(([k, id]) => { if (data.monteCarlo[k] !== undefined) document.getElementById(id).value = data.monteCarlo[k]; });
+    }
+
+    // Recalculate all
+    calcBuget(); calcAjutor(); calcInvestit(); calcVenCost();
+  } catch(e) { console.log('Auto-load error:', e); }
+}
+
+// Set up auto-save on any input change
+document.addEventListener('input', () => { clearTimeout(window._saveTimer); window._saveTimer = setTimeout(autoSave, 1000); });
+
+// Load saved data on page load
+window.addEventListener('DOMContentLoaded', autoLoad);
+</script>
+</body>
+</html>

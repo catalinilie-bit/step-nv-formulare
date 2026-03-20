@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STEP NV - Audit Eligibilitate & Simulare Punctaj ETF</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --primary: #1a365d;
+  --primary-light: #2c5282;
+  --accent: #c53030;
+  --success: #276749;
+  --success-bg: #c6f6d5;
+  --warning: #975a16;
+  --warning-bg: #fefcbf;
+  --danger-bg: #fed7d7;
+  --info: #2b6cb0;
+  --info-bg: #bee3f8;
+  --bg: #f7fafc;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --text: #1a202c;
+  --text-light: #718096;
+  --input-bg: #edf2f7;
+  --grad: linear-gradient(135deg, #1a365d 0%, #2c5282 50%, #2b6cb0 100%);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+
+.header {
+  background: var(--grad);
+  color:#fff;
+  padding:1.5rem 1rem;
+  text-align:center;
+  position:sticky; top:0; z-index:100;
+  box-shadow:0 4px 20px rgba(0,0,0,.2);
+}
+.header h1 { font-size:1.4rem; font-weight:700; letter-spacing:.3px; }
+.header .subtitle { font-size:.82rem; opacity:.85; margin-top:.2rem; }
+.header .ref { font-size:.72rem; opacity:.6; margin-top:.15rem; }
+
+.top-bar {
+  display:flex; gap:.5rem; align-items:center; justify-content:center;
+  flex-wrap:wrap; padding:.7rem 1rem;
+  background:var(--card); border-bottom:1px solid var(--border);
+  box-shadow:0 1px 4px rgba(0,0,0,.04);
+}
+.top-bar label { font-size:.8rem; font-weight:600; color:var(--text-light); }
+.top-bar input { padding:.35rem .6rem; border:1.5px solid var(--border); border-radius:6px; font-size:.85rem; width:220px; }
+
+.score-banner {
+  display:flex; gap:1rem; align-items:center; justify-content:center;
+  flex-wrap:wrap; padding:.6rem 1rem;
+  background:linear-gradient(90deg,#ebf8ff,#e6fffa,#f0fff4);
+  border-bottom:2px solid var(--border);
+}
+.score-item { text-align:center; min-width:110px; }
+.score-item .label { font-size:.65rem; text-transform:uppercase; letter-spacing:.5px; color:var(--text-light); font-weight:600; }
+.score-item .value { font-size:1.3rem; font-weight:800; color:var(--primary); }
+.score-item .value.danger { color:var(--accent); }
+.score-item .value.ok { color:var(--success); }
+
+.container { max-width:1100px; margin:0 auto; padding:1rem; }
+
+.nav-tabs {
+  display:flex; flex-wrap:wrap; gap:.3rem; margin-bottom:1rem;
+  background:var(--card); padding:.6rem; border-radius:10px;
+  box-shadow:0 1px 6px rgba(0,0,0,.05);
+}
+.nav-tab {
+  padding:.45rem .9rem; border:none; background:var(--input-bg);
+  color:var(--text-light); border-radius:6px; cursor:pointer;
+  font-size:.75rem; font-weight:600; transition:all .2s; white-space:nowrap;
+}
+.nav-tab:hover { background:#cbd5e0; color:var(--text); }
+.nav-tab.active { background:var(--primary); color:#fff; }
+
+.panel { display:none; }
+.panel.active { display:block; animation:fadeIn .25s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+.section-card {
+  background:var(--card); border-radius:10px;
+  box-shadow:0 2px 10px rgba(0,0,0,.05); margin-bottom:1rem; overflow:hidden;
+}
+.section-hdr {
+  padding:.7rem 1rem;
+  display:flex; align-items:center; gap:.6rem;
+  font-weight:700; font-size:.9rem; color:#fff;
+}
+.section-hdr.eso { background:linear-gradient(135deg,#2c5282,#3182ce); }
+.section-hdr.eg { background:linear-gradient(135deg,#276749,#38a169); }
+.section-hdr.doc { background:linear-gradient(135deg,#975a16,#d69e2e); }
+.section-hdr.s1 { background:linear-gradient(135deg,#1a365d,#2c5282); }
+.section-hdr.s2 { background:linear-gradient(135deg,#553c9a,#805ad5); }
+.section-hdr.obligatoriu { background:linear-gradient(135deg,#9b2c2c,#e53e3e); }
+.section-hdr .badge { background:rgba(255,255,255,.2); padding:.15rem .5rem; border-radius:12px; font-size:.7rem; }
+
+.section-body { padding:.8rem; }
+
+/* Eligibility row */
+.elig-row {
+  display:grid; grid-template-columns:60px 1fr 120px 1fr 150px;
+  gap:.5rem; align-items:center;
+  padding:.6rem .5rem; border-bottom:1px solid #f0f0f0;
+  transition:background .15s;
+}
+.elig-row:hover { background:#f7fafc; }
+.elig-row:last-child { border-bottom:none; }
+.elig-row .code { font-weight:700; font-size:.8rem; color:var(--primary); }
+.elig-row .crit { font-size:.82rem; }
+.elig-row select {
+  padding:.35rem .5rem; border:1.5px solid var(--border); border-radius:6px;
+  font-size:.82rem; font-weight:600; cursor:pointer; background:#fff;
+}
+.elig-row select.ok { border-color:#38a169; background:#f0fff4; color:#276749; }
+.elig-row select.nok { border-color:#e53e3e; background:#fff5f5; color:#9b2c2c; }
+.elig-row select.pending { border-color:#d69e2e; background:#fffff0; color:#975a16; }
+.elig-row input[type="text"] {
+  width:100%; padding:.35rem .5rem; border:1.5px solid var(--border);
+  border-radius:6px; font-size:.8rem; background:var(--input-bg);
+}
+.elig-row .doc-ref { font-size:.72rem; color:var(--text-light); }
+
+/* Doc checklist */
+.doc-row {
+  display:grid; grid-template-columns:50px 1fr 100px 1fr;
+  gap:.5rem; align-items:center;
+  padding:.5rem; border-bottom:1px solid #f0f0f0;
+}
+.doc-row:hover { background:#f7fafc; }
+.doc-row .code { font-weight:700; font-size:.78rem; color:var(--warning); }
+.doc-row .doc-name { font-size:.82rem; }
+.doc-row select { padding:.3rem .4rem; border:1.5px solid var(--border); border-radius:6px; font-size:.8rem; cursor:pointer; }
+.doc-row input[type="text"] { width:100%; padding:.3rem .5rem; border:1.5px solid var(--border); border-radius:6px; font-size:.78rem; }
+
+/* Scoring criterion */
+.score-section-title {
+  padding:.5rem .8rem; background:#edf2f7;
+  font-weight:700; font-size:.85rem; color:var(--primary);
+  border-bottom:1px solid var(--border);
+  display:flex; justify-content:space-between; align-items:center;
+}
+.score-section-title .max { background:var(--primary); color:#fff; padding:.1rem .5rem; border-radius:10px; font-size:.72rem; }
+
+.crit-block {
+  padding:.7rem .8rem; border-bottom:1px solid #f0f0f0;
+}
+.crit-block:last-child { border-bottom:none; }
+
+.crit-header {
+  display:flex; justify-content:space-between; align-items:flex-start; gap:.5rem; margin-bottom:.4rem;
+}
+.crit-header .crit-code { font-weight:700; color:var(--primary); font-size:.82rem; min-width:35px; }
+.crit-header .crit-name { font-size:.82rem; flex:1; }
+.crit-header .crit-max {
+  background:#e2e8f0; color:var(--primary); padding:.1rem .5rem;
+  border-radius:10px; font-size:.72rem; font-weight:700; white-space:nowrap;
+}
+.crit-header .crit-score {
+  background:var(--primary); color:#fff; padding:.1rem .5rem;
+  border-radius:10px; font-size:.72rem; font-weight:700; min-width:50px; text-align:center;
+}
+
+.crit-options { margin-left:2.5rem; }
+
+.opt-row {
+  display:flex; align-items:center; gap:.5rem; padding:.2rem 0;
+}
+.opt-row label {
+  font-size:.8rem; cursor:pointer; display:flex; align-items:center; gap:.4rem;
+}
+.opt-row input[type="radio"], .opt-row input[type="checkbox"] {
+  accent-color:var(--primary); width:16px; height:16px; cursor:pointer;
+}
+.opt-row .pts {
+  background:#edf2f7; padding:.05rem .35rem; border-radius:8px;
+  font-size:.7rem; font-weight:700; color:var(--primary); white-space:nowrap;
+}
+
+.algo-badge {
+  display:inline-block; padding:.1rem .4rem; border-radius:8px;
+  font-size:.65rem; font-weight:600; text-transform:uppercase; letter-spacing:.3px;
+}
+.algo-badge.cum { background:#e9d8fd; color:#553c9a; }
+.algo-badge.dis { background:#fed7e2; color:#97266d; }
+.algo-badge.pf { background:#fefcbf; color:#975a16; }
+
+/* Pass/Fail criteria */
+.pf-row {
+  display:flex; align-items:center; gap:.6rem; padding:.45rem .8rem;
+  border-bottom:1px solid #f0f0f0;
+}
+.pf-row:last-child { border-bottom:none; }
+.pf-row .code { font-weight:700; font-size:.8rem; color:#9b2c2c; min-width:35px; }
+.pf-row .name { font-size:.82rem; flex:1; }
+.pf-toggle {
+  display:flex; gap:0; border-radius:6px; overflow:hidden; border:1.5px solid var(--border);
+}
+.pf-toggle button {
+  padding:.3rem .7rem; border:none; cursor:pointer; font-size:.78rem; font-weight:600;
+  background:#f7fafc; color:var(--text-light); transition:all .15s;
+}
+.pf-toggle button.active-da { background:#c6f6d5; color:#276749; }
+.pf-toggle button.active-nu { background:#fed7d7; color:#9b2c2c; }
+.pf-toggle button:first-child { border-right:1px solid var(--border); }
+
+/* Summary */
+.result-card {
+  border-radius:10px; padding:1.2rem; text-align:center; margin-bottom:1rem;
+}
+.result-card.pass { background:linear-gradient(135deg,#c6f6d5,#9ae6b4); border:2px solid #48bb78; }
+.result-card.fail { background:linear-gradient(135deg,#fed7d7,#feb2b2); border:2px solid #fc8181; }
+.result-card h2 { font-size:1.2rem; margin-bottom:.3rem; }
+.result-card .score-big { font-size:2.5rem; font-weight:800; }
+
+.gauge-container { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; margin:1rem 0; }
+.gauge {
+  width:140px; text-align:center; padding:.8rem;
+  background:var(--card); border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.06);
+}
+.gauge .ring {
+  width:80px; height:80px; margin:0 auto .4rem;
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:1.1rem; font-weight:800; color:var(--primary);
+}
+.gauge .label { font-size:.7rem; color:var(--text-light); font-weight:600; }
+
+.rating-bar { display:flex; gap:.3rem; margin-top:.8rem; justify-content:center; flex-wrap:wrap; }
+.rating-item {
+  padding:.3rem .6rem; border-radius:6px; font-size:.72rem; font-weight:600;
+  border:1.5px solid transparent;
+}
+.rating-item.active { border-color:var(--primary); box-shadow:0 0 0 2px rgba(26,54,93,.2); transform:scale(1.05); }
+
+.btn-row { display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; margin-top:1rem; }
+.btn {
+  padding:.6rem 1.3rem; border:none; border-radius:8px;
+  font-size:.85rem; font-weight:600; cursor:pointer; transition:all .2s;
+  display:flex; align-items:center; gap:.3rem;
+}
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { background:var(--primary-light); transform:translateY(-1px); }
+.btn-success { background:#276749; color:#fff; }
+.btn-success:hover { background:#22543d; transform:translateY(-1px); }
+.btn-outline { background:transparent; color:var(--primary); border:2px solid var(--primary); }
+.btn-outline:hover { background:var(--primary); color:#fff; }
+.btn-danger { background:#c53030; color:#fff; }
+.btn-danger:hover { background:#9b2c2c; }
+
+.info-box {
+  background:#ebf8ff; border-left:4px solid #3182ce;
+  padding:.6rem .8rem; border-radius:0 8px 8px 0;
+  margin-bottom:.8rem; font-size:.8rem; color:#2a4365;
+}
+.warn-box {
+  background:#fff5f5; border-left:4px solid #fc8181;
+  padding:.6rem .8rem; border-radius:0 8px 8px 0;
+  margin-bottom:.8rem; font-size:.8rem; color:#9b2c2c;
+}
+
+.footer { text-align:center; padding:1.5rem 0; color:var(--text-light); font-size:.75rem; }
+
+@media (max-width:768px) {
+  .elig-row { grid-template-columns:50px 1fr; }
+  .elig-row .doc-ref { display:none; }
+  .doc-row { grid-template-columns:40px 1fr; }
+  .nav-tab { font-size:.68rem; padding:.35rem .6rem; }
+  .score-banner { flex-direction:column; gap:.3rem; }
+}
+@media print {
+  .header,.top-bar,.nav-tabs,.btn-row,.btn { display:none !important; }
+  .panel { display:block !important; page-break-inside:avoid; }
+  .score-banner { position:static; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>STEP NV - Audit Eligibilitate & Simulare Punctaj ETF</h1>
+  <div class="subtitle">Instrument de verificare eligibilitate si auto-evaluare tehnico-financiara</div>
+  <div class="ref">PRNV/2026/961/1 | PR Nord-Vest 2021-2027 | OS 1.6</div>
+</div>
+
+<div class="top-bar">
+  <label>Solicitant:</label>
+  <input type="text" id="solicitant" placeholder="Denumire companie">
+  <label>CUI:</label>
+  <input type="text" id="cui" placeholder="RO12345678" style="width:130px;">
+  <label>Data:</label>
+  <input type="date" id="dataAudit" value="2026-03-20" style="width:150px;">
+  <label>Auditat de:</label>
+  <input type="text" id="auditor" placeholder="Nume consultant" style="width:180px;">
+</div>
+
+<div class="score-banner" id="scoreBanner">
+  <div class="score-item">
+    <div class="label">Eligibilitate ESO</div>
+    <div class="value" id="banEso">-</div>
+  </div>
+  <div class="score-item">
+    <div class="label">Eligibilitate EG</div>
+    <div class="value" id="banEg">-</div>
+  </div>
+  <div class="score-item">
+    <div class="label">Documente</div>
+    <div class="value" id="banDoc">-</div>
+  </div>
+  <div class="score-item" style="border-left:2px solid var(--border); padding-left:1rem;">
+    <div class="label">Punctaj Sec. I</div>
+    <div class="value" id="banS1">0/89</div>
+  </div>
+  <div class="score-item">
+    <div class="label">Punctaj Sec. II</div>
+    <div class="value" id="banS2">0/11</div>
+  </div>
+  <div class="score-item" style="border-left:2px solid var(--border); padding-left:1rem;">
+    <div class="label">TOTAL</div>
+    <div class="value" id="banTotal" style="font-size:1.6rem;">0/100</div>
+  </div>
+  <div class="score-item">
+    <div class="label">Status</div>
+    <div class="value" id="banStatus" style="font-size:.9rem;">-</div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="showPanel(0)">Eligibilitate ESO</button>
+  <button class="nav-tab" onclick="showPanel(1)">Eligibilitate EG</button>
+  <button class="nav-tab" onclick="showPanel(2)">Checklist Documente</button>
+  <button class="nav-tab" onclick="showPanel(3)">Punctaj: 1. Contributie OS 1.6</button>
+  <button class="nav-tab" onclick="showPanel(4)">Punctaj: 2. Capacitate</button>
+  <button class="nav-tab" onclick="showPanel(5)">Punctaj: 3. Complementaritate</button>
+  <button class="nav-tab" onclick="showPanel(6)">Punctaj: 4. Impact</button>
+  <button class="nav-tab" onclick="showPanel(7)">Punctaj: 5-6. Obligatorii</button>
+  <button class="nav-tab" onclick="showPanel(8)">Rezumat & Export</button>
+</div>
+
+<!-- PANEL 0: ESO -->
+<div class="panel active" id="p0">
+  <div class="section-card">
+    <div class="section-hdr eso">
+      <span class="badge">ESO</span> Conditii Specifice de Eligibilitate
+      <span style="margin-left:auto; font-size:.75rem; opacity:.8;">12 criterii | Toate trebuie indeplinite</span>
+    </div>
+    <div class="section-body">
+      <div class="info-box">Toate criteriile ESO trebuie sa fie "DA" pentru ca proiectul sa fie eligibil. Selectati statusul fiecarui criteriu.</div>
+      <div id="esoRows"></div>
+    </div>
+  </div>
+  <div class="btn-row"><button class="btn btn-primary" onclick="showPanel(1)">Urmatorul: Eligibilitate EG &#8594;</button></div>
+</div>
+
+<!-- PANEL 1: EG -->
+<div class="panel" id="p1">
+  <div class="section-card">
+    <div class="section-hdr eg">
+      <span class="badge">EG</span> Conditii Generale de Eligibilitate
+      <span style="margin-left:auto; font-size:.75rem; opacity:.8;">6 criterii | Toate trebuie indeplinite</span>
+    </div>
+    <div class="section-body">
+      <div class="info-box">Conditii generale de eligibilitate conform ghidului solicitantului.</div>
+      <div id="egRows"></div>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="showPanel(0)">&#8592; Inapoi</button>
+    <button class="btn btn-primary" onclick="showPanel(2)">Urmatorul: Documente &#8594;</button>
+  </div>
+</div>
+
+<!-- PANEL 2: DOCUMENTE -->
+<div class="panel" id="p2">
+  <div class="section-card">
+    <div class="section-hdr doc">
+      <span class="badge">DOC</span> Checklist Documente Necesare
+      <span style="margin-left:auto; font-size:.75rem; opacity:.8;">19 documente</span>
+    </div>
+    <div class="section-body">
+      <div class="info-box">Verificati prezenta si conformitatea fiecarui document din dosarul de finantare.</div>
+      <div id="docRows"></div>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="showPanel(1)">&#8592; Inapoi</button>
+    <button class="btn btn-primary" onclick="showPanel(3)">Urmatorul: Punctaj &#8594;</button>
+  </div>
+</div>
+
+<!-- PANEL 3: CRITERIU 1 -->
+<div class="panel" id="p3">
+  <div class="section-card">
+    <div class="section-hdr s1">
+      <span class="badge">SEC. I</span> 1. Contributia Proiectului la OS 1.6
+      <span style="margin-left:auto;" class="badge">Max 35 pts</span>
+    </div>
+    <div class="section-body" id="crit1Body"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="showPanel(2)">&#8592; Inapoi</button>
+    <button class="btn btn-primary" onclick="showPanel(4)">Urmatorul: Capacitate &#8594;</button>
+  </div>
+</div>
+
+<!-- PANEL 4: CRITERIU 2 -->
+<div class="panel" id="p4">
+  <div class="section-card">
+    <div class="section-hdr s1">
+      <span class="badge">SEC. I</span> 2. Capacitate Operationala si Financiara
+      <span style="margin-left:auto;" class="badge">Max 20 pts</span>
+    </div>
+    <div class="section-body" id="crit2Body"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="showPanel(3)">&#8592; Inapoi</button>
+    <button class="btn btn-primary" onclick="showPanel(5)">Urmatorul: Complementaritate &#8594;</button>
+  </div>
+</div>
+
+<!-- PANEL 5: CRITERIU 3 -->
+<div class="panel" id="p5">
+  <div class="section-card">
+    <div class="section-hdr s2">
+      <span class="badge">SEC. I</span> 3. Complementaritate Investitii Anterioare
+      <span style="margin-left:auto;" class="badge">Max 8 pts</span>
+    </div>
+    <div class="section-body" id="crit3Body"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="showPanel(4)">&#8592; Inapoi</button>
+    <button class="btn btn-primary" onclick="showPanel(6)">Urmatorul: Impact &#8594;</button>
+  </div>
+</div>
+
+<!-- PANEL 6: CRITERIU 4 -->
+<div class="panel" id="p6">
+  <div class="section-card">
+    <div class="section-hdr s1">
+      <span class="badge">SEC. I</span> 4. Impactul Proiectului
+      <span style="margin-left:auto;" class="badge">Max 26 pts</span>
+    </div>
+    <div class="section-body" id="crit4Body"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="showPanel(5)">&#8592; Inapoi</button>
+    <button class="btn btn-primary" onclick="showPanel(7)">Urmatorul: Obligatorii &#8594;</button>
+  </div>
+</div>
+
+<!-- PANEL 7: CRITERII OBLIGATORII 5-6 -->
+<div class="panel" id="p7">
+  <div class="section-card">
+    <div class="section-hdr obligatoriu">
+      <span class="badge">SEC. II</span> 5. Calitatea si Relevanta Proiectului (PASS/FAIL)
+      <span style="margin-left:auto;" class="badge">Max 10 pts | 0 = RESPINGERE</span>
+    </div>
+    <div class="section-body">
+      <div class="warn-box">ATENTIE: Orice criteriu marcat "NU" duce la respingerea automata a proiectului!</div>
+      <div id="crit5Body"></div>
+    </div>
+  </div>
+  <div class="section-card">
+    <div class="section-hdr obligatoriu">
+      <span class="badge">SEC. II</span> 6. Conformitate Principii Orizontale (PASS/FAIL)
+      <span style="margin-left:auto;" class="badge">Max 1 pt | 0 = RESPINGERE</span>
+    </div>
+    <div class="section-body">
+      <div id="crit6Body"></div>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="showPanel(6)">&#8592; Inapoi</button>
+    <button class="btn btn-primary" onclick="showPanel(8)">Rezumat & Export &#8594;</button>
+  </div>
+</div>
+
+<!-- PANEL 8: REZUMAT -->
+<div class="panel" id="p8">
+  <div class="section-card">
+    <div class="section-hdr s1">Rezumat Evaluare Completa</div>
+    <div class="section-body">
+      <div id="summaryContent"></div>
+      <div class="btn-row" style="margin-top:1.2rem;">
+        <button class="btn btn-success" onclick="exportExcel()">Exporta Excel (.xlsx)</button>
+        <button class="btn btn-primary" onclick="exportJSON()">Exporta JSON</button>
+        <button class="btn btn-outline" onclick="window.print()">Printeaza</button>
+        <button class="btn btn-danger" onclick="resetAll()">Reseteaza Tot</button>
+      </div>
+    </div>
+  </div>
+  <div class="btn-row"><button class="btn btn-outline" onclick="showPanel(7)">&#8592; Inapoi</button></div>
+</div>
+
+</div>
+
+<div class="footer">STEP NV - Audit Eligibilitate & Simulare Punctaj ETF | INTELLINK | &copy; 2026</div>
+
+<script>
+// ============ DATA DEFINITIONS ============
+const ESO_CRITERIA = [
+  {code:'ESO1', text:'Solicitantul este stabilit in Romania (sediu social/punct de lucru activ in Regiunea NV)', doc:'Certificat constatator ONRC'},
+  {code:'ESO2', text:'Solicitantul desfasoara activitate economica pe cod CAEN eligibil STEP (Anexa 22)', doc:'Certificat constatator + Anexa 22'},
+  {code:'ESO3', text:'Proiectul se implementeaza in Regiunea Nord-Vest (CJ, BH, BN, MM, SJ, SM)', doc:'Cerere de finantare'},
+  {code:'ESO4', text:'Maturitatea tehnologica minima TRL 4', doc:'Raport expert / CTT'},
+  {code:'ESO5', text:'Valoare grant solicitata intre 5.000.000 - 10.000.000 EUR', doc:'Buget cerere de finantare'},
+  {code:'ESO6', text:'Valoare totala proiect nu depaseste 50.000.000 EUR', doc:'Buget cerere de finantare'},
+  {code:'ESO7', text:'Activitatea de baza (investitie productiva) reprezinta minim 50% din bugetul eligibil', doc:'Buget + structura activitatilor'},
+  {code:'ESO8', text:'Solicitantul nu este in dificultate financiara conform GBER art. 2(18)', doc:'Declaratie unica + situatii financiare'},
+  {code:'ESO9', text:'Solicitantul nu are obligatii fiscale restante', doc:'Certificat fiscal ANAF'},
+  {code:'ESO10', text:'Solicitantul nu se afla in insolventa, faliment, lichidare', doc:'Certificat constatator ONRC'},
+  {code:'ESO11', text:'Proiectul nu a fost finalizat fizic / implementat integral inainte de depunere', doc:'Declaratie unica'},
+  {code:'ESO12', text:'Solicitantul aplica ca entitate unica (fara parteneri)', doc:'Cerere de finantare'},
+];
+
+const EG_CRITERIA = [
+  {code:'EG1', text:'Solicitantul este persoana juridica de drept privat, legal constituita', doc:'Certificat constatator ONRC'},
+  {code:'EG2', text:'Solicitantul nu face obiectul unui ordin de recuperare a unui ajutor de stat declarat ilegal', doc:'Declaratie pe propria raspundere'},
+  {code:'EG3', text:'Reprezentantul legal nu se afla sub interdictie judecatoreasca / proceduri penale', doc:'Cazier judiciar + Declaratie'},
+  {code:'EG4', text:'Proiectul respecta principiul DNSH (Do No Significant Harm)', doc:'Sectiunea DNSH din cererea de finantare'},
+  {code:'EG5', text:'Proiectul respecta legislatia privind egalitatea de sanse si nediscriminarea', doc:'Cerere de finantare'},
+  {code:'EG6', text:'Solicitantul si-a indeplinit obligatiile de raportare pentru proiecte anterioare finantate din fonduri UE', doc:'Declaratie + Evidente MySMIS'},
+];
+
+const DOC_LIST = [
+  {code:'D1', text:'Cerere de finantare completa (MySMIS2021)'},
+  {code:'D2', text:'Plan de afaceri cu studiu de piata'},
+  {code:'D3', text:'Macheta financiara completata'},
+  {code:'D4', text:'Raport expert contabil (investitii complementare)'},
+  {code:'D5', text:'Raport expert / centru transfer tehnologic (TRL)'},
+  {code:'D6', text:'Scrisori de sustinere Romania (minim 3)'},
+  {code:'D7', text:'Scrisori de sustinere UE (minim 3)'},
+  {code:'D8', text:'Scrisori de sustinere non-UE (minim 3)'},
+  {code:'D9', text:'CV-uri echipa + documente experienta'},
+  {code:'D10', text:'Declaratie unica (Anexa III.1)'},
+  {code:'D11', text:'Declaratie eligibilitate (Anexa IV.1)'},
+  {code:'D12', text:'Declaratie IMM / Intreprindere mare (Anexa IV.2)'},
+  {code:'D13', text:'Hotarare aprobare proiect (Anexa IV.3)'},
+  {code:'D14', text:'Declaratie eligibilitate TVA (Anexa IV.4)'},
+  {code:'D15', text:'Centralizator numere cadastrale (Anexa III.2)'},
+  {code:'D16', text:'Centralizator justificare costuri (Anexa III.3)'},
+  {code:'D17', text:'Certificat constatator ONRC (max 30 zile)'},
+  {code:'D18', text:'Certificat fiscal ANAF'},
+  {code:'D19', text:'Situatii financiare ultimii 3 ani'},
+];
+
+// Scoring criteria with sub-options
+const SCORING = {
+  c1: {
+    title: '1. Contributia Proiectului la OS 1.6', max: 35,
+    subs: [
+      { id:'1.1', name:'Numarul locurilor de munca create (RCR01)', max:6, algo:'DISJUNCTIV',
+        doc:'Raport de ansamblu, Bilant, Declaratie PE', type:'Documente',
+        info:'Se calculeaza dupa tipul grantului si numarul ENI proiectat.',
+        options:[
+          {label:'Grant >7M EUR, >6 ENI', pts:6},
+          {label:'Grant >7M EUR, >5-6 ENI', pts:4},
+          {label:'Grant >7M EUR, >4-5 ENI', pts:2},
+          {label:'Grant >7M EUR, ≤4 ENI', pts:0},
+          {label:'Grant 5-7M EUR, >4 ENI', pts:6},
+          {label:'Grant 5-7M EUR, >3-4 ENI', pts:4},
+          {label:'Grant 5-7M EUR, >2-3 ENI', pts:2},
+          {label:'Grant 5-7M EUR, ≤2 ENI', pts:0},
+        ]},
+      { id:'1.2', name:'Nivelul de inovatie si maturitate tehnologica', max:5, algo:'CUMULATIV',
+        doc:'Plan de R&D, Documente de proprietate intelectuala', type:'Tehnic',
+        info:'Cumulativ: selectati toate inovatiile aplicabile. Maxim 5 pt.',
+        options:[
+          {label:'Inovatii de ruptura', pts:1},
+          {label:'Inovatii de produs/serviciu', pts:1},
+          {label:'Inovatii de proces', pts:1},
+          {label:'Tehnologii emergente', pts:1},
+          {label:'Tehnologii de varf', pts:1},
+        ]},
+      { id:'1.3', name:'Venituri din exploatare (3 ani sust.) ca % din grant regional', max:6, algo:'DISJUNCTIV',
+        doc:'Prognoze financiare, Studiu de fezabilitate', type:'Financiar',
+        info:'Evaluat pe 3 ani de sustenabilitate. O singura optiune.',
+        options:[
+          {label:'>20%', pts:6},
+          {label:'>15% - 20%', pts:4},
+          {label:'>10% - 15%', pts:3},
+          {label:'>5% - 10%', pts:2},
+          {label:'>1% - 5%', pts:1},
+          {label:'≤1%', pts:0},
+        ]},
+      { id:'1.4', name:'Contributia la suveranitatea tehnologica / rezilienta UE', max:8, algo:'CUMULATIV',
+        doc:'Analiza lantului de valori, Strategia de autonomie', type:'Tehnic',
+        info:'Cumulativ: reducere dependente critice (4pt) + prevenire noi dependente (4pt).',
+        options:[
+          {label:'Reducere dependente critice existente', pts:4},
+          {label:'Prevenire dependente critice noi', pts:4},
+        ]},
+      { id:'1.5', name:'Ponderea activitatilor de cercetare din valoarea eligibila', max:10, algo:'DISJUNCTIV',
+        doc:'Plan detaliat de R&D, Planul de raspandire rezultatelor', type:'Tehnic',
+        info:'Disjunctiv pe grupe de % din buget eligibil.',
+        options:[
+          {label:'>15% buget CD', pts:10},
+          {label:'>12% buget CD', pts:8},
+          {label:'>9% buget CD', pts:6},
+          {label:'>6% buget CD', pts:4},
+          {label:'>3% buget CD', pts:2},
+          {label:'≤3% sau externalizat', pts:0},
+        ]},
+    ]
+  },
+  c2: {
+    title: '2. Capacitate Operationala si Financiara', max: 20,
+    subs: [
+      { id:'2.1', name:'Capacitatea operationala — echipa propusa', max:12, algo:'CUMULATIV',
+        doc:'CV-uri, Scrisori de angajament, Documente UE anterioare', type:'RH',
+        info:'Cumulativ: selectati toate calificarile aplicabile.',
+        options:[
+          {label:'Director proiect 5+ ani experienta domeniu', pts:4},
+          {label:'Membru echipa 5+ ani experienta domeniu', pts:2},
+          {label:'Membru echipa 3+ ani experienta domeniu', pts:2},
+          {label:'Membru management operational 5+ ani', pts:2},
+          {label:'Experienta proiecte UE (min 2 proiecte, 100K EUR cumul.)', pts:2},
+        ]},
+      { id:'2.2', name:'Rata solvabilitatii generale (Active/Datorii)', max:4, algo:'DISJUNCTIV',
+        doc:'Bilant contabil, Declaratie fiscala PE', type:'Financiar',
+        info:'Disjunctiv: o singura optiune.',
+        options:[
+          {label:'Rata ≥ 3', pts:4},
+          {label:'Rata ≥ 2, < 3', pts:2},
+          {label:'Rata < 2', pts:0},
+        ]},
+      { id:'2.3', name:'Flux financiar net de numerar pe orizontul de analiza', max:4, algo:'DISJUNCTIV',
+        doc:'Plan de cash flow, Prognozare financiara', type:'Financiar',
+        info:'Disjunctiv: o singura optiune.',
+        options:[
+          {label:'Cumulat pozitiv pe toata perioada', pts:4},
+          {label:'Cumulat negativ', pts:0},
+        ]},
+    ]
+  },
+  c3: {
+    title: '3. Complementaritate Investitii Anterioare', max: 8,
+    subs: [
+      { id:'3.1', name:'Investitii pregatitoare in ultimii 3 ani ca % din valoarea eligibila', max:8, algo:'DISJUNCTIV',
+        doc:'Istoricul investitiilor, Dovezi de investitii anterioare', type:'Financiar',
+        info:'Disjunctiv: o singura optiune.',
+        options:[
+          {label:'≥ 10%', pts:8},
+          {label:'≥ 5%, < 10%', pts:6},
+          {label:'≥ 1%, < 5%', pts:4},
+          {label:'< 1%', pts:0},
+        ]},
+    ]
+  },
+  c4: {
+    title: '4. Impactul Proiectului', max: 26,
+    subs: [
+      { id:'4.1', name:'Relevanta strategica a proiectului', max:9, algo:'CUMULATIV',
+        doc:'Plan de dezvoltare regional, Strategia CRMA', type:'Strategie',
+        info:'Cumulativ: selectati toate cele aplicabile. Max 9pt.',
+        options:[
+          {label:'Resursa naturala regionala in CRMA', pts:3},
+          {label:'Tehnologie NZIA', pts:3},
+          {label:'Deep tech / KET', pts:3},
+        ]},
+      { id:'4.2', name:'Colaborari cu entitati relevante', max:6, algo:'CUMULATIV',
+        doc:'Scrisori de parteneriat, Acorduri de colaborare', type:'Parteneriate',
+        info:'Cumulativ: min 3 scrisori per categorie.',
+        options:[
+          {label:'Colaborari RO (min 3 scrisori)', pts:2},
+          {label:'Colaborari UE (min 3 scrisori)', pts:2},
+          {label:'Colaborari non-UE (min 3 scrisori)', pts:2},
+        ]},
+      { id:'4.3', name:'Scalabilitate internationala si acces la piete', max:3, algo:'DISJUNCTIV',
+        doc:'Plan de penetrare piata, Studiu de piata international', type:'Piata',
+        info:'Disjunctiv: o singura optiune.',
+        options:[
+          {label:'Potential real + parteneriate + strategie', pts:3},
+          {label:'Fara dovezi', pts:0},
+        ]},
+      { id:'4.4', name:'Efect de propagare — spillover', max:3, algo:'DISJUNCTIV',
+        doc:'Plan de diseminare si valorificare', type:'Impact',
+        info:'Disjunctiv: o singura optiune.',
+        options:[
+          {label:'Efecte spillover in alte state UE', pts:3},
+          {label:'Fara efecte / nejustificat', pts:0},
+        ]},
+      { id:'4.5', name:'Pret cu valoare adaugata ridicata', max:5, algo:'DISJUNCTIV',
+        doc:'Analiza cost-beneficiu, Plan de preturi', type:'Comercial',
+        info:'Disjunctiv: o singura optiune.',
+        options:[
+          {label:'Valoare adaugata > 50%', pts:5},
+          {label:'Valoare adaugata > 30%', pts:3},
+          {label:'Valoare adaugata ≥ 15%', pts:1},
+          {label:'Nejustificat', pts:0},
+        ]},
+    ]
+  }
+};
+
+const PF_CRITERIA_5 = [
+  {id:'5.1', name:'Conformitate domeniu STEP (digital/curat/biotech)', doc:'Descriere domeniu de aplicare'},
+  {id:'5.2', name:'Tehnologii critice — conditii STEP art.2(2)', doc:'Mapare conformitate STEP art.2(2)'},
+  {id:'5.3', name:'Necesitatea implementarii — justificare', doc:'Analiza cost-beneficiu, Studiu de piata'},
+  {id:'5.4', name:'Calitatea propunerii financiare', doc:'Plan buget detaliat, Bilant'},
+  {id:'5.5', name:'Calitatea propunerii tehnice', doc:'Plan de executie, Metodologie tehnic'},
+  {id:'5.6', name:'Corelare activitati — scop proiect', doc:'Matrice de corelatie activitati-obiective'},
+  {id:'5.7', name:'Activitati detaliate, resurse suficiente', doc:'Plan de lucru (WBS), Planul de resurse'},
+  {id:'5.8', name:'Corelare indicatori — rezultate', doc:'Matrice indicatori-rezultate, Plan monitorizare'},
+  {id:'5.9', name:'Identificare si detaliere riscuri', doc:'Registru de riscuri, Matrice risc-impact'},
+  {id:'5.10', name:'Mecanisme de gestiune a riscurilor', doc:'Plan de contingenta, Strategia de mitigare'},
+];
+
+const PF_CRITERIA_6 = [
+  {id:'6.1', name:'Justificare principii DNSH / orizontale', doc:'Conformitate DNSH, Analiza orizontale'},
+];
+
+// ============ STATE ============
+const state = {
+  eso: {}, eg: {}, doc: {}, esoObs: {}, egObs: {}, docObs: {},
+  scores: {}, pfScores: {},
+};
+
+// ============ RENDER FUNCTIONS ============
+function renderEligRows(container, criteria, prefix) {
+  let html = '';
+  criteria.forEach(c => {
+    html += `<div class="elig-row">
+      <div class="code">${c.code}</div>
+      <div class="crit">${c.text}</div>
+      <select id="${prefix}_${c.code}" onchange="updateElig('${prefix}','${c.code}',this)" class="pending">
+        <option value="">-- Selectati --</option>
+        <option value="DA">DA</option>
+        <option value="NU">NU</option>
+        <option value="N/A">N/A</option>
+        <option value="De verificat">De verificat</option>
+      </select>
+      <input type="text" id="${prefix}_obs_${c.code}" placeholder="Observatii..." oninput="state.${prefix}Obs['${c.code}']=this.value;saveState()">
+      <div class="doc-ref">${c.doc}</div>
+    </div>`;
+  });
+  document.getElementById(container).innerHTML = html;
+}
+
+function renderDocRows() {
+  let html = '';
+  DOC_LIST.forEach(d => {
+    html += `<div class="doc-row">
+      <div class="code">${d.code}</div>
+      <div class="doc-name">${d.text}</div>
+      <select id="doc_${d.code}" onchange="updateDoc('${d.code}',this)">
+        <option value="">-- Status --</option>
+        <option value="Complet">Complet</option>
+        <option value="Incomplet">Incomplet</option>
+        <option value="Lipsa">Lipsa</option>
+        <option value="N/A">N/A</option>
+      </select>
+      <input type="text" id="doc_obs_${d.code}" placeholder="Observatii..." oninput="state.docObs['${d.code}']=this.value;saveState()">
+    </div>`;
+  });
+  document.getElementById('docRows').innerHTML = html;
+}
+
+function renderScoringSection(containerID, sectionKey) {
+  const section = SCORING[sectionKey];
+  let html = '';
+  section.subs.forEach(sub => {
+    const isCum = sub.algo === 'CUMULATIV';
+    const inputType = isCum ? 'checkbox' : 'radio';
+    const groupName = `score_${sub.id.replace('.','_')}`;
+    html += `<div class="crit-block">
+      <div class="crit-header">
+        <span class="crit-code">${sub.id}</span>
+        <span class="crit-name">${sub.name}
+          <br><span style="font-size:.72rem;color:var(--text-light);">${sub.info}</span>
+          <br><span class="algo-badge ${isCum?'cum':'dis'}">${sub.algo}</span>
+          <span style="font-size:.68rem;color:var(--text-light);margin-left:.5rem;">${sub.doc}</span>
+        </span>
+        <span class="crit-max">Max ${sub.max}</span>
+        <span class="crit-score" id="score_display_${sub.id.replace('.','_')}">0 pts</span>
+      </div>
+      <div class="crit-options">`;
+    sub.options.forEach((opt, oi) => {
+      const inputId = `${groupName}_${oi}`;
+      html += `<div class="opt-row">
+        <label>
+          <input type="${inputType}" name="${groupName}" id="${inputId}" value="${opt.pts}"
+            onchange="updateScore('${sectionKey}','${sub.id}',${isCum})"
+            ${(!isCum && opt.pts === 0 && sub.options.length > 2) ? '' : ''}>
+          ${opt.label}
+          <span class="pts">${opt.pts} pt${opt.pts !== 1 ? 's' : ''}</span>
+        </label>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  document.getElementById(containerID).innerHTML = html;
+}
+
+function renderPassFail(containerID, criteria, prefix) {
+  let html = '';
+  criteria.forEach(c => {
+    html += `<div class="pf-row">
+      <span class="code">${c.id}</span>
+      <span class="name">${c.name}<br><span style="font-size:.7rem;color:var(--text-light);">${c.doc}</span></span>
+      <div class="pf-toggle" id="pf_${prefix}_${c.id.replace('.','_')}">
+        <button onclick="setPF('${prefix}','${c.id}','DA',this)">DA</button>
+        <button onclick="setPF('${prefix}','${c.id}','NU',this)">NU</button>
+      </div>
+    </div>`;
+  });
+  document.getElementById(containerID).innerHTML = html;
+}
+
+// ============ UPDATE FUNCTIONS ============
+function updateElig(prefix, code, el) {
+  state[prefix][code] = el.value;
+  el.className = el.value === 'DA' ? 'ok' : el.value === 'NU' ? 'nok' : el.value ? 'pending' : '';
+  recalcAll();
+  saveState();
+}
+
+function updateDoc(code, el) {
+  state.doc[code] = el.value;
+  recalcAll();
+  saveState();
+}
+
+function updateScore(sectionKey, subId, isCum) {
+  const groupName = `score_${subId.replace('.','_')}`;
+  let pts = 0;
+  if (isCum) {
+    document.querySelectorAll(`input[name="${groupName}"]:checked`).forEach(inp => pts += parseInt(inp.value));
+  } else {
+    const checked = document.querySelector(`input[name="${groupName}"]:checked`);
+    if (checked) pts = parseInt(checked.value);
+  }
+  const sub = findSub(sectionKey, subId);
+  if (pts > sub.max) pts = sub.max;
+  state.scores[subId] = pts;
+  document.getElementById(`score_display_${subId.replace('.','_')}`).textContent = pts + ' pts';
+  document.getElementById(`score_display_${subId.replace('.','_')}`).style.background = pts > 0 ? '#276749' : '#e2e8f0';
+  document.getElementById(`score_display_${subId.replace('.','_')}`).style.color = pts > 0 ? '#fff' : 'var(--primary)';
+  recalcAll();
+  saveState();
+}
+
+function setPF(prefix, id, val, btn) {
+  const key = `${prefix}_${id}`;
+  state.pfScores[key] = val;
+  const container = btn.parentElement;
+  container.querySelectorAll('button').forEach(b => { b.className = ''; });
+  btn.className = val === 'DA' ? 'active-da' : 'active-nu';
+  recalcAll();
+  saveState();
+}
+
+function findSub(sectionKey, subId) {
+  return SCORING[sectionKey].subs.find(s => s.id === subId);
+}
+
+// ============ RECALCULATE ============
+function recalcAll() {
+  // Eligibility
+  const esoTotal = ESO_CRITERIA.length;
+  const esoDa = ESO_CRITERIA.filter(c => state.eso[c.code] === 'DA').length;
+  const esoNu = ESO_CRITERIA.filter(c => state.eso[c.code] === 'NU').length;
+  const esoNA = ESO_CRITERIA.filter(c => state.eso[c.code] === 'N/A').length;
+  const esoEff = esoTotal - esoNA;
+  const esoPass = esoNu === 0 && esoDa === esoEff && esoEff > 0;
+
+  const egTotal = EG_CRITERIA.length;
+  const egDa = EG_CRITERIA.filter(c => state.eg[c.code] === 'DA').length;
+  const egNu = EG_CRITERIA.filter(c => state.eg[c.code] === 'NU').length;
+  const egNA = EG_CRITERIA.filter(c => state.eg[c.code] === 'N/A').length;
+  const egEff = egTotal - egNA;
+  const egPass = egNu === 0 && egDa === egEff && egEff > 0;
+
+  const docTotal = DOC_LIST.length;
+  const docOk = DOC_LIST.filter(d => state.doc[d.code] === 'Complet' || state.doc[d.code] === 'N/A').length;
+  const docMissing = DOC_LIST.filter(d => state.doc[d.code] === 'Lipsa').length;
+
+  document.getElementById('banEso').textContent = esoNu > 0 ? 'NEELIGIBIL' : esoDa === esoEff && esoEff > 0 ? 'ELIGIBIL' : `${esoDa}/${esoEff}`;
+  document.getElementById('banEso').className = 'value ' + (esoNu > 0 ? 'danger' : esoPass ? 'ok' : '');
+  document.getElementById('banEg').textContent = egNu > 0 ? 'NEELIGIBIL' : egDa === egEff && egEff > 0 ? 'ELIGIBIL' : `${egDa}/${egEff}`;
+  document.getElementById('banEg').className = 'value ' + (egNu > 0 ? 'danger' : egPass ? 'ok' : '');
+  document.getElementById('banDoc').textContent = docMissing > 0 ? `${docMissing} LIPSA` : docOk === docTotal ? 'COMPLET' : `${docOk}/${docTotal}`;
+  document.getElementById('banDoc').className = 'value ' + (docMissing > 0 ? 'danger' : docOk === docTotal ? 'ok' : '');
+
+  // Section I scores
+  let s1 = 0;
+  ['c1','c2','c3','c4'].forEach(sk => {
+    SCORING[sk].subs.forEach(sub => { s1 += (state.scores[sub.id] || 0); });
+  });
+
+  // Section II scores
+  let s2 = 0;
+  let s2Fail = false;
+  PF_CRITERIA_5.forEach(c => {
+    const key = `5_${c.id}`;
+    if (state.pfScores[key] === 'DA') s2 += 1;
+    if (state.pfScores[key] === 'NU') s2Fail = true;
+  });
+  PF_CRITERIA_6.forEach(c => {
+    const key = `6_${c.id}`;
+    if (state.pfScores[key] === 'DA') s2 += 1;
+    if (state.pfScores[key] === 'NU') s2Fail = true;
+  });
+
+  const total = s1 + s2;
+
+  document.getElementById('banS1').textContent = s1 + '/89';
+  document.getElementById('banS2').textContent = s2 + '/11';
+  document.getElementById('banS2').className = 'value ' + (s2Fail ? 'danger' : s2 === 11 ? 'ok' : '');
+  document.getElementById('banTotal').textContent = total + '/100';
+  document.getElementById('banTotal').className = 'value ' + (total >= 75 ? 'ok' : total >= 60 ? '' : 'danger');
+
+  let statusText = '';
+  if (s2Fail) {
+    statusText = 'RESPINS';
+    document.getElementById('banStatus').className = 'value danger';
+  } else if (total >= 85) {
+    statusText = 'EXCELENT';
+    document.getElementById('banStatus').className = 'value ok';
+  } else if (total >= 80) {
+    statusText = 'FOARTE BUN';
+    document.getElementById('banStatus').className = 'value ok';
+  } else if (total >= 75) {
+    statusText = 'BUN';
+    document.getElementById('banStatus').className = 'value ok';
+  } else if (total >= 70) {
+    statusText = 'SATISFACATOR';
+    document.getElementById('banStatus').className = 'value';
+  } else if (total >= 60) {
+    statusText = 'ACCEPTABIL';
+    document.getElementById('banStatus').className = 'value';
+  } else {
+    statusText = 'INSUFICIENT';
+    document.getElementById('banStatus').className = 'value danger';
+  }
+  document.getElementById('banStatus').textContent = statusText;
+
+  // Update summary panel
+  updateSummary(esoPass, egPass, docOk, docTotal, docMissing, s1, s2, s2Fail, total, statusText);
+}
+
+function updateSummary(esoPass, egPass, docOk, docTotal, docMissing, s1, s2, s2Fail, total, statusText) {
+  const isElig = esoPass && egPass;
+  const overallPass = isElig && !s2Fail && total >= 60;
+
+  let html = `<div class="result-card ${overallPass ? 'pass' : 'fail'}">
+    <h2>${overallPass ? 'PROIECT ELIGIBIL SI PUNCTAT' : 'ATENTIE - VERIFICATI CRITERIILE'}</h2>
+    <div class="score-big">${total} / 100</div>
+    <div style="font-size:.9rem;margin-top:.3rem;font-weight:600;">${statusText}</div>
+  </div>`;
+
+  html += `<div class="gauge-container">
+    <div class="gauge">
+      <div class="ring" style="background:conic-gradient(${esoPass?'#48bb78':'#fc8181'} 100%, #e2e8f0 0%)">${esoPass?'OK':'!'}</div>
+      <div class="label">Eligibilitate ESO</div>
+    </div>
+    <div class="gauge">
+      <div class="ring" style="background:conic-gradient(${egPass?'#48bb78':'#fc8181'} 100%, #e2e8f0 0%)">${egPass?'OK':'!'}</div>
+      <div class="label">Eligibilitate EG</div>
+    </div>
+    <div class="gauge">
+      <div class="ring" style="background:conic-gradient(#4299e1 ${(docOk/docTotal*100).toFixed(0)}%, #e2e8f0 0%)">${docOk}/${docTotal}</div>
+      <div class="label">Documente</div>
+    </div>
+    <div class="gauge">
+      <div class="ring" style="background:conic-gradient(#805ad5 ${(s1/89*100).toFixed(0)}%, #e2e8f0 0%)">${s1}/89</div>
+      <div class="label">Sectiunea I</div>
+    </div>
+    <div class="gauge">
+      <div class="ring" style="background:conic-gradient(${s2Fail?'#fc8181':'#48bb78'} ${(s2/11*100).toFixed(0)}%, #e2e8f0 0%)">${s2}/11</div>
+      <div class="label">Sectiunea II</div>
+    </div>
+  </div>`;
+
+  // Rating bar
+  const ratings = [
+    {name:'EXCELENT', min:85, color:'#276749', bg:'#c6f6d5'},
+    {name:'FOARTE BUN', min:80, color:'#2c7a7b', bg:'#b2f5ea'},
+    {name:'BUN', min:75, color:'#2b6cb0', bg:'#bee3f8'},
+    {name:'SATISFACATOR', min:70, color:'#975a16', bg:'#fefcbf'},
+    {name:'ACCEPTABIL', min:60, color:'#9c4221', bg:'#feebc8'},
+    {name:'INSUFICIENT', min:0, color:'#9b2c2c', bg:'#fed7d7'},
+  ];
+  html += `<div class="rating-bar">`;
+  ratings.forEach(r => {
+    const isActive = (total >= r.min && (r.min === 85 || total < ratings[ratings.indexOf(r)-1]?.min));
+    const active = statusText === r.name;
+    html += `<div class="rating-item ${active?'active':''}" style="background:${r.bg};color:${r.color};">${r.name} (≥${r.min})</div>`;
+  });
+  html += `</div>`;
+
+  // Detailed breakdown
+  html += `<div style="margin-top:1.2rem;">
+    <table class="detail-table" style="width:100%;border-collapse:collapse;font-size:.82rem;">
+      <thead><tr style="background:var(--primary);color:#fff;">
+        <th style="padding:.4rem .6rem;text-align:left;">Criteriu</th>
+        <th style="padding:.4rem .6rem;text-align:center;">Scor</th>
+        <th style="padding:.4rem .6rem;text-align:center;">Max</th>
+        <th style="padding:.4rem .6rem;text-align:center;">%</th>
+      </tr></thead><tbody>`;
+
+  ['c1','c2','c3','c4'].forEach(sk => {
+    const sec = SCORING[sk];
+    let secTotal = 0;
+    sec.subs.forEach(sub => secTotal += (state.scores[sub.id]||0));
+    html += `<tr style="background:#edf2f7;font-weight:700;">
+      <td style="padding:.3rem .6rem;">${sec.title}</td>
+      <td style="text-align:center;">${secTotal}</td>
+      <td style="text-align:center;">${sec.max}</td>
+      <td style="text-align:center;">${sec.max>0?Math.round(secTotal/sec.max*100):0}%</td>
+    </tr>`;
+    sec.subs.forEach(sub => {
+      const sc = state.scores[sub.id]||0;
+      html += `<tr style="border-bottom:1px solid #f0f0f0;">
+        <td style="padding:.25rem .6rem .25rem 1.5rem;">${sub.id} ${sub.name}</td>
+        <td style="text-align:center;font-weight:600;color:${sc>0?'#276749':'#9b2c2c'}">${sc}</td>
+        <td style="text-align:center;">${sub.max}</td>
+        <td style="text-align:center;">${sub.max>0?Math.round(sc/sub.max*100):0}%</td>
+      </tr>`;
+    });
+  });
+
+  html += `<tr style="background:#fff5f5;font-weight:700;">
+    <td style="padding:.3rem .6rem;">5. Calitate & Relevanta (PASS/FAIL)</td>
+    <td style="text-align:center;">${PF_CRITERIA_5.reduce((s,c)=>s+(state.pfScores[`5_${c.id}`]==='DA'?1:0),0)}</td>
+    <td style="text-align:center;">10</td>
+    <td style="text-align:center;">${s2Fail?'FAIL':'PASS'}</td>
+  </tr>`;
+  html += `<tr style="background:#fff5f5;font-weight:700;">
+    <td style="padding:.3rem .6rem;">6. Principii Orizontale (PASS/FAIL)</td>
+    <td style="text-align:center;">${state.pfScores['6_6.1']==='DA'?1:0}</td>
+    <td style="text-align:center;">1</td>
+    <td style="text-align:center;">${state.pfScores['6_6.1']==='NU'?'FAIL':'PASS'}</td>
+  </tr>`;
+  html += `<tr style="background:var(--primary);color:#fff;font-weight:700;font-size:.95rem;">
+    <td style="padding:.5rem .6rem;">TOTAL GENERAL</td>
+    <td style="text-align:center;">${total}</td>
+    <td style="text-align:center;">100</td>
+    <td style="text-align:center;">${total}%</td>
+  </tr>`;
+  html += `</tbody></table></div>`;
+
+  document.getElementById('summaryContent').innerHTML = html;
+}
+
+// ============ NAVIGATION ============
+function showPanel(idx) {
+  document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('active', i===idx));
+  document.querySelectorAll('.nav-tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+  if (idx === 8) recalcAll();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ============ PERSISTENCE ============
+function saveState() {
+  try { localStorage.setItem('stepnv_audit', JSON.stringify(state)); } catch(e) {}
+}
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem('stepnv_audit');
+    if (!saved) return;
+    const s = JSON.parse(saved);
+    if (!s) return;
+    Object.assign(state, s);
+
+    // Restore eligibility selects
+    ESO_CRITERIA.forEach(c => {
+      const el = document.getElementById(`eso_${c.code}`);
+      if (el && state.eso[c.code]) { el.value = state.eso[c.code]; el.className = state.eso[c.code]==='DA'?'ok':state.eso[c.code]==='NU'?'nok':'pending'; }
+      const obs = document.getElementById(`eso_obs_${c.code}`);
+      if (obs && state.esoObs[c.code]) obs.value = state.esoObs[c.code];
+    });
+    EG_CRITERIA.forEach(c => {
+      const el = document.getElementById(`eg_${c.code}`);
+      if (el && state.eg[c.code]) { el.value = state.eg[c.code]; el.className = state.eg[c.code]==='DA'?'ok':state.eg[c.code]==='NU'?'nok':'pending'; }
+      const obs = document.getElementById(`eg_obs_${c.code}`);
+      if (obs && state.egObs[c.code]) obs.value = state.egObs[c.code];
+    });
+    DOC_LIST.forEach(d => {
+      const el = document.getElementById(`doc_${d.code}`);
+      if (el && state.doc[d.code]) el.value = state.doc[d.code];
+      const obs = document.getElementById(`doc_obs_${d.code}`);
+      if (obs && state.docObs[d.code]) obs.value = state.docObs[d.code];
+    });
+
+    // Restore scores
+    ['c1','c2','c3','c4'].forEach(sk => {
+      SCORING[sk].subs.forEach(sub => {
+        if (state.scores[sub.id] !== undefined) {
+          const isCum = sub.algo === 'CUMULATIV';
+          const groupName = `score_${sub.id.replace('.','_')}`;
+          if (isCum) {
+            // For cumulative, we need to check the right checkboxes
+            // This is simplified - just update the display
+            document.getElementById(`score_display_${sub.id.replace('.','_')}`).textContent = state.scores[sub.id] + ' pts';
+            if (state.scores[sub.id] > 0) {
+              document.getElementById(`score_display_${sub.id.replace('.','_')}`).style.background = '#276749';
+              document.getElementById(`score_display_${sub.id.replace('.','_')}`).style.color = '#fff';
+            }
+          }
+        }
+      });
+    });
+
+    // Restore PF
+    Object.entries(state.pfScores).forEach(([key, val]) => {
+      const [prefix, ...idParts] = key.split('_');
+      const id = idParts.join('_');
+      const container = document.getElementById(`pf_${key.replace('.','_')}`);
+      if (container) {
+        const btns = container.querySelectorAll('button');
+        btns.forEach(b => b.className = '');
+        if (val === 'DA') btns[0].className = 'active-da';
+        if (val === 'NU') btns[1].className = 'active-nu';
+      }
+    });
+
+    // Restore top bar
+    if (s.solicitant) document.getElementById('solicitant').value = s.solicitant;
+    if (s.cui) document.getElementById('cui').value = s.cui;
+    if (s.dataAudit) document.getElementById('dataAudit').value = s.dataAudit;
+    if (s.auditor) document.getElementById('auditor').value = s.auditor;
+
+    recalcAll();
+  } catch(e) { console.log('Load error:', e); }
+}
+
+function resetAll() {
+  if (!confirm('Sigur doriti sa resetati toate datele?')) return;
+  localStorage.removeItem('stepnv_audit');
+  location.reload();
+}
+
+// ============ EXPORT ============
+function collectAll() {
+  const data = {
+    solicitant: document.getElementById('solicitant').value,
+    cui: document.getElementById('cui').value,
+    dataAudit: document.getElementById('dataAudit').value,
+    auditor: document.getElementById('auditor').value,
+    eligibilitate: { eso: {...state.eso}, esoObs: {...state.esoObs}, eg: {...state.eg}, egObs: {...state.egObs} },
+    documente: { status: {...state.doc}, obs: {...state.docObs} },
+    punctaj: { scores: {...state.scores}, passFail: {...state.pfScores} },
+    rezultat: {
+      totalS1: 0, totalS2: 0, total: 0, status: '',
+      esoEligibil: ESO_CRITERIA.filter(c=>state.eso[c.code]==='NU').length === 0,
+      egEligibil: EG_CRITERIA.filter(c=>state.eg[c.code]==='NU').length === 0,
+    }
+  };
+  ['c1','c2','c3','c4'].forEach(sk => {
+    SCORING[sk].subs.forEach(sub => { data.rezultat.totalS1 += (state.scores[sub.id]||0); });
+  });
+  PF_CRITERIA_5.forEach(c => { if(state.pfScores[`5_${c.id}`]==='DA') data.rezultat.totalS2 += 1; });
+  PF_CRITERIA_6.forEach(c => { if(state.pfScores[`6_${c.id}`]==='DA') data.rezultat.totalS2 += 1; });
+  data.rezultat.total = data.rezultat.totalS1 + data.rezultat.totalS2;
+  data.rezultat.status = document.getElementById('banStatus').textContent;
+  return data;
+}
+
+function exportExcel() {
+  const d = collectAll();
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Audit Eligibilitate
+  const ws1Data = [
+    ['AUDIT DE ELIGIBILITATE - STEP Nord-Vest (PRNV/2026/961/1)'],
+    [''],
+    ['Denumire solicitant:', d.solicitant, '', 'Data auditului:', d.dataAudit],
+    ['CUI:', d.cui, '', 'Auditat de:', d.auditor],
+    [''],
+    ['Cod', 'Criteriu', 'Status', 'Observatii', 'Document suport'],
+    ['', 'CONDITII SPECIFICE DE ELIGIBILITATE (ESO)', '', '', ''],
+  ];
+  ESO_CRITERIA.forEach(c => ws1Data.push([c.code, c.text, state.eso[c.code]||'', state.esoObs[c.code]||'', c.doc]));
+  ws1Data.push(['', 'CONDITII GENERALE DE ELIGIBILITATE (EG)', '', '', '']);
+  EG_CRITERIA.forEach(c => ws1Data.push([c.code, c.text, state.eg[c.code]||'', state.egObs[c.code]||'', c.doc]));
+  ws1Data.push(['']);
+  ws1Data.push(['', 'CHECKLIST DOCUMENTE', '', '', '']);
+  DOC_LIST.forEach(dc => ws1Data.push([dc.code, dc.text, state.doc[dc.code]||'', state.docObs[dc.code]||'']));
+  ws1Data.push(['']);
+  ws1Data.push(['REZULTAT ELIGIBILITATE', d.rezultat.esoEligibil && d.rezultat.egEligibil ? 'ELIGIBIL' : 'NEELIGIBIL']);
+
+  const ws1 = XLSX.utils.aoa_to_sheet(ws1Data);
+  ws1['!cols'] = [{wch:10},{wch:60},{wch:15},{wch:30},{wch:35}];
+  XLSX.utils.book_append_sheet(wb, ws1, 'Audit Eligibilitate');
+
+  // Sheet 2: Simulare Punctaj
+  const ws2Data = [
+    ['SIMULARE PUNCTAJ ETF - STEP Nord-Vest'],
+    ['Solicitant:', d.solicitant, 'Data:', d.dataAudit],
+    [''],
+    ['Cod', 'Criteriu / Subcriteriu', 'Pct Max', 'Scor obtinut', 'Algoritm', 'Documente', 'Tip'],
+    ['', 'SECTIUNEA I - Criterii cu punctaj', '', '', '', '', ''],
+  ];
+  ['c1','c2','c3','c4'].forEach(sk => {
+    const sec = SCORING[sk];
+    let secTotal = 0;
+    sec.subs.forEach(sub => secTotal += (state.scores[sub.id]||0));
+    ws2Data.push(['', sec.title, sec.max, secTotal, 'CUMULATIV', '', '']);
+    sec.subs.forEach(sub => {
+      ws2Data.push([sub.id, sub.name, sub.max, state.scores[sub.id]||0, sub.algo, sub.doc, sub.type]);
+    });
+  });
+  ws2Data.push(['']);
+  ws2Data.push(['', 'SECTIUNEA II - Criterii obligatorii (PASS/FAIL)', '', '', '', '', '']);
+  PF_CRITERIA_5.forEach(c => {
+    ws2Data.push([c.id, c.name, 1, state.pfScores[`5_${c.id}`]==='DA'?1:0, 'PASS/FAIL', c.doc, '']);
+  });
+  PF_CRITERIA_6.forEach(c => {
+    ws2Data.push([c.id, c.name, 1, state.pfScores[`6_${c.id}`]==='DA'?1:0, 'PASS/FAIL', c.doc, '']);
+  });
+  ws2Data.push(['']);
+  ws2Data.push(['', 'TOTAL SECTIUNEA I', 89, d.rezultat.totalS1]);
+  ws2Data.push(['', 'TOTAL SECTIUNEA II', 11, d.rezultat.totalS2]);
+  ws2Data.push(['', 'TOTAL GENERAL', 100, d.rezultat.total]);
+  ws2Data.push(['']);
+  ws2Data.push(['', 'STATUS EVALUARE', d.rezultat.status]);
+  ws2Data.push(['']);
+  ws2Data.push(['', 'PRAGURI:', '', '']);
+  ws2Data.push(['', 'EXCELENT', '≥ 85 pts']);
+  ws2Data.push(['', 'FOARTE BUN', '80-84 pts']);
+  ws2Data.push(['', 'BUN', '75-79 pts']);
+  ws2Data.push(['', 'SATISFACATOR', '70-74 pts']);
+  ws2Data.push(['', 'ACCEPTABIL', '60-69 pts']);
+  ws2Data.push(['', 'INSUFICIENT', '< 60 pts']);
+
+  const ws2 = XLSX.utils.aoa_to_sheet(ws2Data);
+  ws2['!cols'] = [{wch:8},{wch:55},{wch:10},{wch:12},{wch:14},{wch:40},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Simulare Punctaj ETF');
+
+  const fn = 'STEP_NV_Audit_Punctaj_' + (d.solicitant||'Client').replace(/[^a-zA-Z0-9]/g,'_') + '_' + d.dataAudit + '.xlsx';
+  XLSX.writeFile(wb, fn);
+}
+
+function exportJSON() {
+  const d = collectAll();
+  const blob = new Blob([JSON.stringify(d,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'STEP_NV_Audit_Punctaj_' + (d.solicitant||'Client').replace(/[^a-zA-Z0-9]/g,'_') + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ============ INIT ============
+document.addEventListener('DOMContentLoaded', () => {
+  renderEligRows('esoRows', ESO_CRITERIA, 'eso');
+  renderEligRows('egRows', EG_CRITERIA, 'eg');
+  renderDocRows();
+  renderScoringSection('crit1Body', 'c1');
+  renderScoringSection('crit2Body', 'c2');
+  renderScoringSection('crit3Body', 'c3');
+  renderScoringSection('crit4Body', 'c4');
+  renderPassFail('crit5Body', PF_CRITERIA_5, '5');
+  renderPassFail('crit6Body', PF_CRITERIA_6, '6');
+  loadState();
+  recalcAll();
+
+  // Auto-save top bar fields
+  ['solicitant','cui','dataAudit','auditor'].forEach(id => {
+    document.getElementById(id).addEventListener('input', function() {
+      state[id] = this.value;
+      saveState();
+    });
+  });
+});
+</script>
+</body>
+</html>

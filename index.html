@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STEP Nord-Vest | INTELLINK - Platformă Formulare</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --primary: #0f2b46;
+  --primary-mid: #1a3a5c;
+  --primary-light: #2c5282;
+  --accent: #00b4d8;
+  --accent2: #0077b6;
+  --gold: #f59e0b;
+  --success: #10b981;
+  --bg: #f0f4f8;
+  --card: #ffffff;
+  --text: #1e293b;
+  --text-light: #64748b;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* HERO */
+.hero {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-mid) 40%, var(--primary-light) 100%);
+  color: #fff;
+  text-align: center;
+  padding: 3rem 1.5rem 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at 30% 50%, rgba(0,180,216,.08) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 50%, rgba(245,158,11,.05) 0%, transparent 50%);
+  animation: drift 20s ease-in-out infinite;
+}
+
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-2%, 1%); }
+}
+
+.hero-content { position: relative; z-index: 1; max-width: 800px; margin: 0 auto; }
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  margin-bottom: 1.2rem;
+}
+
+.brand-logo {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -1px;
+  box-shadow: 0 4px 15px rgba(0,180,216,.3);
+}
+
+.brand-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: .5rem;
+}
+
+.hero h1 span { color: var(--accent); }
+
+.hero .tagline {
+  font-size: .95rem;
+  opacity: .75;
+  font-weight: 400;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.badge-row {
+  display: flex;
+  gap: .5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 1.2rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .3rem .7rem;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 20px;
+  font-size: .72rem;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+}
+
+/* CARDS */
+.cards-section {
+  max-width: 900px;
+  margin: -1.5rem auto 0;
+  padding: 0 1.5rem 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+}
+
+.card {
+  background: var(--card);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,.08);
+  transition: all .3s ease;
+  text-decoration: none;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  border: 2px solid transparent;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,.12);
+  border-color: var(--accent);
+}
+
+.card-header {
+  padding: 1.2rem 1.2rem .8rem;
+  display: flex;
+  align-items: flex-start;
+  gap: .8rem;
+}
+
+.card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.card-icon.mc { background: linear-gradient(135deg, #dbeafe, #bfdbfe); }
+.card-icon.audit { background: linear-gradient(135deg, #d1fae5, #a7f3d0); }
+
+.card-header h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: .2rem;
+}
+
+.card-header .card-sub {
+  font-size: .78rem;
+  color: var(--text-light);
+  font-weight: 400;
+}
+
+.card-body {
+  padding: 0 1.2rem;
+  flex: 1;
+}
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+}
+
+.feature-list li {
+  font-size: .8rem;
+  padding: .25rem 0;
+  display: flex;
+  align-items: flex-start;
+  gap: .4rem;
+  color: var(--text-light);
+}
+
+.feature-list li::before {
+  content: '✓';
+  color: var(--success);
+  font-weight: 700;
+  font-size: .75rem;
+  margin-top: 1px;
+}
+
+.card-footer {
+  padding: 1rem 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .5rem 1rem;
+  border-radius: 8px;
+  font-size: .82rem;
+  font-weight: 600;
+  transition: all .2s;
+}
+
+.card-btn.mc-btn { background: #1a365d; color: #fff; }
+.card-btn.mc-btn:hover { background: #2c5282; }
+.card-btn.audit-btn { background: #276749; color: #fff; }
+.card-btn.audit-btn:hover { background: #22543d; }
+
+.card-footer .time {
+  font-size: .72rem;
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+}
+
+/* INFO SECTION */
+.info-section {
+  max-width: 900px;
+  margin: 0 auto 2rem;
+  padding: 0 1.5rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .8rem;
+}
+
+.info-card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,.04);
+}
+
+.info-card .icon { font-size: 1.5rem; margin-bottom: .4rem; }
+.info-card h3 { font-size: .82rem; font-weight: 700; margin-bottom: .2rem; }
+.info-card p { font-size: .72rem; color: var(--text-light); }
+
+/* FOOTER */
+.site-footer {
+  margin-top: auto;
+  text-align: center;
+  padding: 1.5rem;
+  font-size: .72rem;
+  color: var(--text-light);
+  border-top: 1px solid #e2e8f0;
+}
+
+.site-footer a { color: var(--accent2); text-decoration: none; }
+
+/* RESPONSIVE */
+@media (max-width: 680px) {
+  .cards-grid { grid-template-columns: 1fr; }
+  .info-grid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 1.4rem; }
+  .brand-name { font-size: 1.1rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <div class="brand">
+      <div class="brand-logo">IL</div>
+      <div class="brand-name">INTELLINK</div>
+    </div>
+    <h1>Platformă Formulare<br><span>STEP Nord-Vest</span></h1>
+    <p class="tagline">Instrumente digitale pentru pregătirea și evaluarea proiectelor de finanțare STEP — PR Nord-Vest 2021-2027, OS 1.6</p>
+    <div class="badge-row">
+      <span class="badge">📋 PRNV/2026/961/1</span>
+      <span class="badge">🇪🇺 PR Nord-Vest 2021-2027</span>
+      <span class="badge">🎯 OS 1.6 — STEP</span>
+      <span class="badge">💰 Grant: 5M - 10M EUR</span>
+    </div>
+  </div>
+</div>
+
+<div class="cards-section">
+  <div class="cards-grid">
+
+    <a href="formular-monte-carlo.html" class="card">
+      <div class="card-header">
+        <div class="card-icon mc">📊</div>
+        <div>
+          <h2>Formular Analiza Monte Carlo</h2>
+          <div class="card-sub">Completare date proiect și analiza financiara</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <ul class="feature-list">
+          <li>Date companie și parametri proiect</li>
+          <li>Distribuție buget pe tipuri de ajutor</li>
+          <li>Proiecții venituri și costuri (5 ani)</li>
+          <li>Bilanț prescurtat și Cont P&L</li>
+          <li>Parametri Monte Carlo & senzitivitate</li>
+          <li>Compatibil Anexa III.5 (Macheta Financiară)</li>
+          <li>Export Excel automat</li>
+        </ul>
+      </div>
+      <div class="card-footer">
+        <span class="card-btn mc-btn">Deschide Formularul &#8594;</span>
+        <span class="time">~15-20 min</span>
+      </div>
+    </a>
+
+    <a href="audit-simulare-punctaj.html" class="card">
+      <div class="card-header">
+        <div class="card-icon audit">✅</div>
+        <div>
+          <h2>Audit Eligibilitate & Simulare Punctaj</h2>
+          <div class="card-sub">Verificare criterii și auto-evaluare ETF</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <ul class="feature-list">
+          <li>12 criterii ESO (Condiții Specifice)</li>
+          <li>6 criterii EG (Condiții Generale)</li>
+          <li>Checklist 19 documente necesare</li>
+          <li>Simulare punctaj ETF (100 puncte)</li>
+          <li>Criterii PASS/FAIL Secțiunea II</li>
+          <li>Scor live și rating automat</li>
+          <li>Export Excel cu 2 sheet-uri</li>
+        </ul>
+      </div>
+      <div class="card-footer">
+        <span class="card-btn audit-btn">Deschide Auditul &#8594;</span>
+        <span class="time">~10-15 min</span>
+      </div>
+    </a>
+
+  </div>
+</div>
+
+<div class="info-section">
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="icon">💾</div>
+      <h3>Auto-Save</h3>
+      <p>Datele se salvează automat în browser. Puteți reveni oricând fără a pierde progresul.</p>
+    </div>
+    <div class="info-card">
+      <div class="icon">📥</div>
+      <h3>Export Excel & JSON</h3>
+      <p>Exportați datele în format Excel sau JSON pentru centralizare și procesare ulterioară.</p>
+    </div>
+    <div class="info-card">
+      <div class="icon">🔒</div>
+      <h3>Date Locale</h3>
+      <p>Toate datele rămân pe dispozitivul dumneavoastră. Nu sunt transmise către servere externe.</p>
+    </div>
+  </div>
+</div>
+
+<div class="site-footer">
+  <p><strong>INTELLINK</strong> | Platformă formulare STEP Nord-Vest | &copy; 2026</p>
+  <p style="margin-top:.3rem;">Instrument de lucru intern — nu înlocuiește consultanța profesională de specialitate.</p>
+</div>
+
+</body>
+</html>
