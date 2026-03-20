@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chestionar Evaluare Preliminara Client | INTELLINK</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #1a237e;
+            --primary-light: #3949ab;
+            --accent: #00c853;
+            --accent-dark: #00a844;
+            --bg: #f5f6fa;
+            --card: #ffffff;
+            --text: #1a1a2e;
+            --text-light: #5a5a7a;
+            --border: #e0e0e0;
+            --warning: #ff6f00;
+            --warning-bg: #fff8e1;
+            --info: #e8eaf6;
+            --danger: #c62828;
+            --success-bg: #e8f5e9;
+            --shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .header h1 { font-size: 1.6em; font-weight: 700; margin-bottom: 4px; }
+        .header p { opacity: 0.9; font-size: 0.95em; }
+        .header .brand { font-size: 0.8em; opacity: 0.7; margin-top: 8px; letter-spacing: 2px; }
+
+        .progress-bar {
+            background: rgba(255,255,255,0.2);
+            height: 6px;
+            width: 100%;
+            margin-top: 15px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: var(--accent);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 3px;
+        }
+        .progress-text {
+            font-size: 0.8em;
+            margin-top: 5px;
+            opacity: 0.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .intro-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
+        }
+        .intro-card p { color: var(--text-light); font-size: 0.95em; margin-bottom: 8px; }
+        .intro-card .confidential {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--info);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            color: var(--primary);
+            margin-top: 8px;
+        }
+
+        .section {
+            background: var(--card);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .section.active { box-shadow: 0 4px 20px rgba(26,35,126,0.15); }
+
+        .section-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 16px 24px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+        .section-header:hover { filter: brightness(1.1); }
+        .section-header h2 { font-size: 1.05em; font-weight: 600; }
+        .section-header .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+        }
+        .section-header .arrow {
+            transition: transform 0.3s ease;
+            font-size: 1.2em;
+        }
+        .section-header .arrow.open { transform: rotate(180deg); }
+
+        .section-body {
+            padding: 24px;
+            display: none;
+        }
+        .section-body.open { display: block; }
+
+        .field-group {
+            margin-bottom: 20px;
+        }
+        .field-group:last-child { margin-bottom: 0; }
+
+        label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9em;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+        label .hint {
+            font-weight: 400;
+            color: var(--text-light);
+            font-size: 0.9em;
+            display: block;
+            margin-top: 2px;
+        }
+        label .required {
+            color: var(--danger);
+            margin-left: 2px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="number"],
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            background: #fafbfc;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(57,73,171,0.1);
+        }
+        textarea { min-height: 100px; resize: vertical; }
+
+        .radio-group, .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 6px;
+        }
+        .radio-option, .checkbox-option {
+            position: relative;
+        }
+        .radio-option input, .checkbox-option input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .radio-option label, .checkbox-option label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 400;
+            font-size: 0.88em;
+            transition: all 0.2s ease;
+            background: #fafbfc;
+        }
+        .radio-option input:checked + label,
+        .checkbox-option input:checked + label {
+            border-color: var(--primary);
+            background: var(--info);
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .radio-option label:hover, .checkbox-option label:hover {
+            border-color: var(--primary-light);
+            background: #f0f1ff;
+        }
+
+        .warning-box {
+            background: var(--warning-bg);
+            border-left: 4px solid var(--warning);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+            font-size: 0.85em;
+            color: #5d4037;
+        }
+        .warning-box::before { content: "⚠ "; font-weight: bold; }
+
+        .info-box {
+            background: var(--info);
+            border-left: 4px solid var(--primary);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+            font-size: 0.85em;
+            color: var(--primary);
+        }
+
+        .two-cols {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 600px) {
+            .two-cols { grid-template-columns: 1fr; }
+            .radio-group, .checkbox-group { flex-direction: column; }
+        }
+
+        .ref-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+        .ref-table th {
+            background: var(--primary);
+            color: white;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        .ref-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .ref-table tr:hover td { background: var(--info); }
+
+        .btn-container {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+            margin-bottom: 40px;
+        }
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+        .btn:active { transform: translateY(0); }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 100%);
+            color: white;
+        }
+        .btn-outline {
+            background: white;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+        .btn-danger {
+            background: white;
+            color: var(--danger);
+            border: 2px solid var(--danger);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Eligibility summary */
+        .eligibility-panel {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 20px;
+            box-shadow: var(--shadow);
+            display: none;
+        }
+        .eligibility-panel.visible { display: block; }
+        .eligibility-panel h3 {
+            font-size: 1.1em;
+            margin-bottom: 16px;
+            color: var(--primary);
+        }
+        .elig-card {
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+        .elig-card.eligible {
+            border-color: var(--accent);
+            background: var(--success-bg);
+        }
+        .elig-card.partial {
+            border-color: var(--warning);
+            background: var(--warning-bg);
+        }
+        .elig-card.ineligible {
+            border-color: var(--danger);
+            background: #ffebee;
+        }
+        .elig-card h4 { font-size: 1em; margin-bottom: 6px; }
+        .elig-card .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .elig-card.eligible .status-badge { background: var(--accent); color: white; }
+        .elig-card.partial .status-badge { background: var(--warning); color: white; }
+        .elig-card.ineligible .status-badge { background: var(--danger); color: white; }
+        .elig-criteria { font-size: 0.85em; color: var(--text-light); }
+        .elig-criteria li { margin-bottom: 4px; }
+        .elig-criteria .pass::before { content: "✅ "; }
+        .elig-criteria .fail::before { content: "❌ "; }
+        .elig-criteria .warn::before { content: "⚠️ "; }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--primary);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: var(--accent-dark); }
+        .toast.error { background: var(--danger); }
+
+        /* Autosave indicator */
+        .autosave-indicator {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 999;
+        }
+        .autosave-indicator.show { opacity: 1; }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .step-dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .step-dot.active { background: var(--accent); transform: scale(1.15); }
+        .step-dot.completed { background: rgba(0,200,83,0.5); }
+        .step-dot:hover { transform: scale(1.1); }
+
+        .subsection-title {
+            font-size: 0.95em;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 20px 0 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--info);
+        }
+        .subsection-title:first-child { margin-top: 0; }
+
+        /* Print styles */
+        @media print {
+            .header { position: static; }
+            .btn-container, .nav-buttons, .autosave-indicator, .step-indicator, .progress-bar, .progress-text { display: none !important; }
+            .section-body { display: block !important; }
+            .section { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="brand">INTELLINK CONSULTING</div>
+    <h1>Chestionar de Evaluare Preliminara</h1>
+    <p>Analiza eligibilitate oportunitati de finantare</p>
+    <div class="step-indicator" id="stepIndicator"></div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-text"><span id="progressText">0%</span> completat</div>
+</div>
+
+<div class="container">
+
+    <div class="intro-card">
+        <p>Acest chestionar colecteaza informatiile necesare pentru a evalua eligibilitatea companiei dumneavoastra pe apelurile de finantare active si pentru a identifica cea mai potrivita oportunitate de finantare in raport cu profilul si nevoile de dezvoltare ale companiei.</p>
+        <p>Va rugam sa completati toate campurile cat mai detaliat posibil.</p>
+        <div class="confidential">
+            <span>&#128274;</span> Informatiile sunt confidentiale si vor fi folosite exclusiv in scopul evaluarii preliminare.
+        </div>
+    </div>
+
+    <!-- SECTION 1: DATE GENERALE -->
+    <div class="section" id="section1">
+        <div class="section-header" onclick="toggleSection(1)">
+            <h2>1. Date Generale Companie</h2>
+            <span class="arrow open" id="arrow1">&#9660;</span>
+        </div>
+        <div class="section-body open" id="body1">
+            <div class="two-cols">
+                <div class="field-group">
+                    <label>Denumire companie <span class="required">*</span></label>
+                    <input type="text" id="denumire_companie" data-required="true" placeholder="SC Exemplu SRL">
+                </div>
+                <div class="field-group">
+                    <label>CUI / CIF <span class="required">*</span></label>
+                    <input type="text" id="cui" data-required="true" placeholder="RO12345678">
+                </div>
+            </div>
+            <div class="two-cols">
+                <div class="field-group">
+                    <label>Nr. inregistrare ONRC</label>
+                    <input type="text" id="nr_onrc" placeholder="J12/345/2020">
+                </div>
+                <div class="field-group">
+                    <label>Data infiintarii <span class="required">*</span></label>
+                    <input type="date" id="data_infiintare" data-required="true">
+                </div>
+            </div>
+            <div class="field-group">
+                <label>Adresa sediu social <span class="hint">Judet, Oras, Strada, Nr.</span></label>
+                <input type="text" id="adresa_sediu" placeholder="Judet Cluj, Cluj-Napoca, Str. Exemplu nr. 10">
+            </div>
+            <div class="two-cols">
+                <div class="field-group">
+                    <label>Regiunea de dezvoltare <span class="required">*</span></label>
+                    <select id="regiune">
+                        <option value="">-- Selectati --</option>
+                        <option value="Nord-Vest">Nord-Vest</option>
+                        <option value="Vest">Vest</option>
+                        <option value="Centru">Centru</option>
+                        <option value="Nord-Est">Nord-Est</option>
+                        <option value="Sud-Est">Sud-Est</option>
+                        <option value="Sud-Muntenia">Sud-Muntenia</option>
+                        <option value="Sud-Vest Oltenia">Sud-Vest Oltenia</option>
+                        <option value="Bucuresti-Ilfov">Bucuresti-Ilfov</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label>Dimensiune companie <span class="required">*</span></label>
+                    <select id="dimensiune">
+                        <option value="">-- Selectati --</option>
+                        <option value="Micro">Micro (&lt;10 ang, &lt;2M EUR)</option>
+                        <option value="Mica">Mica (10-49 ang, &lt;10M EUR)</option>
+                        <option value="Mijlocie">Mijlocie (50-249 ang, &lt;50M EUR)</option>
+                        <option value="Mare">Mare (250+ ang)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="two-cols">
+                <div class="field-group">
+                    <label>Nr. mediu angajati (ultimul an fiscal)</label>
+                    <input type="number" id="nr_angajati" placeholder="ex: 25">
+                </div>
+                <div class="field-group">
+                    <label>Cod CAEN principal (autorizat) <span class="required">*</span></label>
+                    <input type="text" id="caen_principal" data-required="true" placeholder="ex: 6201">
+                </div>
+            </div>
+            <div class="field-group">
+                <label>Coduri CAEN secundare relevante <span class="hint">Autorizate la punctul de lucru vizat</span></label>
+                <input type="text" id="caen_secundare" placeholder="ex: 6202, 6311, 7219">
+            </div>
+            <div class="field-group">
+                <label>Domeniu de activitate <span class="hint">ex: IT, biotech, productie, energie, sanatate</span></label>
+                <input type="text" id="domeniu_activitate" placeholder="ex: IT & Software">
+            </div>
+            <div class="field-group">
+                <label>Punct de lucru pentru implementare <span class="hint">Judet, Oras (daca difera de sediu)</span></label>
+                <input type="text" id="punct_lucru" placeholder="Judet, Oras">
+            </div>
+            <div class="two-cols">
+                <div class="field-group">
+                    <label>Persoana de contact <span class="required">*</span></label>
+                    <input type="text" id="persoana_contact" data-required="true" placeholder="Nume Prenume">
+                </div>
+                <div class="field-group">
+                    <label>Telefon / Email <span class="required">*</span></label>
+                    <input type="text" id="telefon_email" data-required="true" placeholder="07xx xxx xxx / email@company.ro">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: SITUATIE FINANCIARA -->
+    <div class="section" id="section2">
+        <div class="section-header" onclick="toggleSection(2)">
+            <h2>2. Situatie Financiara</h2>
+            <span class="arrow" id="arrow2">&#9660;</span>
+        </div>
+        <div class="section-body" id="body2">
+            <div class="warning-box">Completati pe baza ultimelor situatii financiare depuse (bilant). Aceste date sunt esentiale pentru verificarea eligibilitatii si a capacitatii de cofinantare.</div>
+            <div class="two-cols">
+                <div class="field-group">
+                    <label>Cifra de afaceri (ultimul an fiscal) <span class="hint">EUR sau RON</span></label>
+                    <input type="text" id="ca_ultimul_an" placeholder="ex: 500,000 EUR">
+                </div>
+                <div class="field-group">
+                    <label>Cifra de afaceri (penultimul an fiscal)</label>
+                    <input type="text" id="ca_penultimul_an" placeholder="ex: 400,000 EUR">
+                </div>
+            </div>
+            <div class="two-cols">
+                <div class="field-group">
+                    <label>Profit din exploatare (ultimul an) <span class="hint">Pozitiv / Negativ - valoare</span></label>
+                    <input type="text" id="profit_exploatare" placeholder="ex: 50,000 EUR">
+                </div>
+                <div class="field-group">
+                    <label>Profit net (ultimul an)</label>
+                    <input type="text" id="profit_net" placeholder="ex: 40,000 EUR">
+                </div>
+            </div>
+            <div class="two-cols">
+                <div class="field-group">
+                    <label>Total active (ultimul an)</label>
+                    <input type="text" id="total_active" placeholder="ex: 1,200,000 EUR">
+                </div>
+                <div class="field-group">
+                    <label>Total datorii (ultimul an)</label>
+                    <input type="text" id="total_datorii" placeholder="ex: 300,000 EUR">
+                </div>
+            </div>
+            <div class="field-group">
+                <label>Capitaluri proprii (ultimul an)</label>
+                <input type="text" id="capitaluri_proprii" placeholder="ex: 900,000 EUR">
+            </div>
+
+            <div class="field-group">
+                <label>Compania are datorii restante la bugetul de stat?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" name="datorii_stat" id="datorii_da" value="Da">
+                        <label for="datorii_da">Da</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="datorii_stat" id="datorii_nu" value="Nu">
+                        <label for="datorii_nu">Nu</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Compania este in dificultate financiara?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" name="dificultate" id="dif_da" value="Da">
+                        <label for="dif_da">Da</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="dificultate" id="dif_nu" value="Nu">
+                        <label for="dif_nu">Nu</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="dificultate" id="dif_nustiu" value="Nu stiu">
+                        <label for="dif_nustiu">Nu stiu</label>
+                    </div>
+                </div>
+                <div class="warning-box">O companie este in dificultate daca a pierdut mai mult de jumatate din capitalul social subscris sau este in insolventa/lichidare.</div>
+            </div>
+
+            <div class="field-group">
+                <label>Compania a beneficiat de ajutor de minimis in ultimii 3 ani?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" name="minimis" id="min_da" value="Da">
+                        <label for="min_da">Da</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="minimis" id="min_nu" value="Nu">
+                        <label for="min_nu">Nu</label>
+                    </div>
+                </div>
+            </div>
+            <div class="field-group">
+                <label>Daca DA, valoare totala ajutor de minimis <span class="hint">EUR (plafon: 300.000 EUR / 3 ani fiscali)</span></label>
+                <input type="text" id="valoare_minimis" placeholder="ex: 100,000 EUR">
+            </div>
+
+            <div class="field-group">
+                <label>Rata solvabilitatii (Active/Datorii) <span class="hint">Relevant pentru STEP NV: ideal >= 3</span></label>
+                <input type="text" id="rata_solvabilitate" placeholder="ex: 4.0">
+            </div>
+
+            <div class="field-group">
+                <label>Cash flow cumulat pozitiv pe orizontul investitiei?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" name="cashflow" id="cf_da" value="Da">
+                        <label for="cf_da">Da</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="cashflow" id="cf_nu" value="Nu">
+                        <label for="cf_nu">Nu</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="cashflow" id="cf_nc" value="Nu am calculat">
+                        <label for="cf_nc">Nu am calculat</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: ACTIVITATE CURENTA -->
+    <div class="section" id="section3">
+        <div class="section-header" onclick="toggleSection(3)">
+            <h2>3. Activitate Curenta si Capacitate</h2>
+            <span class="arrow" id="arrow3">&#9660;</span>
+        </div>
+        <div class="section-body" id="body3">
+            <div class="field-group">
+                <label>Descrieti pe scurt activitatea principala a companiei <span class="hint">Produse/servicii principale, piata tinta, clienti, pozitie pe piata</span></label>
+                <textarea id="activitate_principala" placeholder="Descrieti activitatea companiei..."></textarea>
+            </div>
+
+            <div class="field-group">
+                <label>Aveti departament de Cercetare-Dezvoltare-Inovare (CDI)?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" name="cdi" id="cdi_da" value="Da, dedicat">
+                        <label for="cdi_da">Da, dedicat</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="cdi" id="cdi_partial" value="Da, partial">
+                        <label for="cdi_partial">Da, partial (personal cu atributii CDI)</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="cdi" id="cdi_nu" value="Nu">
+                        <label for="cdi_nu">Nu</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Nr. personal implicat in activitati CDI</label>
+                <input type="number" id="nr_personal_cdi" placeholder="ex: 5">
+            </div>
+
+            <div class="field-group">
+                <label>Compania detine brevete, marci sau drepturi IP?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" name="ip" id="ip_da" value="Da">
+                        <label for="ip_da">Da</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="ip" id="ip_nu" value="Nu">
+                        <label for="ip_nu">Nu</label>
+                    </div>
+                </div>
+            </div>
+            <div class="field-group">
+                <label>Daca DA, detaliati</label>
+                <textarea id="detalii_ip" rows="2" placeholder="Descrieti brevetele, marcile inregistrate..."></textarea>
+            </div>
+
+            <div class="field-group">
+                <label>Aveti experienta anterioara in proiecte cu finantare?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" name="exp_finantare" id="exp_eu" value="Da, EU/nationale">
+                        <label for="exp_eu">Da, EU/nationale</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="exp_finantare" id="exp_mici" value="Da, finantari mici">
+                        <label for="exp_mici">Da, dar doar finantari mici</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="exp_finantare" id="exp_nu" value="Nu">
+                        <label for="exp_nu">Nu</label>
+                    </div>
+                </div>
+            </div>
+            <div class="field-group">
+                <label>Daca DA, enumerati <span class="hint">Program, titlu, valoare</span></label>
+                <textarea id="detalii_finantari" rows="2" placeholder="ex: POC 2014-2020, Digitalizare IMM, 200.000 EUR"></textarea>
+            </div>
+
+            <div class="field-group">
+                <label>Investitii realizate in ultimii 3 ani (valoare totala) <span class="hint">Relevant pt STEP NV: min 10% din valoarea eligibila proiect</span></label>
+                <input type="text" id="investitii_3ani" placeholder="ex: 500,000 EUR">
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 4: NEVOIA DE DEZVOLTARE -->
+    <div class="section" id="section4">
+        <div class="section-header" onclick="toggleSection(4)">
+            <h2>4. Nevoia de Dezvoltare / Ideea de Proiect</h2>
+            <span class="arrow" id="arrow4">&#9660;</span>
+        </div>
+        <div class="section-body" id="body4">
+            <div class="field-group">
+                <label>Descrieti nevoia de dezvoltare sau problema pe care doriti sa o rezolvati <span class="hint">Ce limitari aveti in prezent? Ce oportunitate de piata identificati?</span></label>
+                <textarea id="nevoie_dezvoltare" rows="4" placeholder="Descrieti nevoia/problema..."></textarea>
+            </div>
+            <div class="field-group">
+                <label>Descrieti solutia / produsul / serviciul / procesul pe care doriti sa il dezvoltati <span class="hint">Ce rezultat concret asteptati de la proiect?</span></label>
+                <textarea id="solutie_proiect" rows="4" placeholder="Descrieti solutia propusa..."></textarea>
+            </div>
+
+            <div class="field-group">
+                <label>Tipul inovatiei vizate</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="inov_produs" value="Produs/serviciu nou">
+                        <label for="inov_produs">Produs/serviciu nou</label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="inov_imbunatatit" value="Produs/serviciu imbunatatit semnificativ">
+                        <label for="inov_imbunatatit">Produs/serviciu imbunatatit semnificativ</label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="inov_proces" value="Proces de productie nou">
+                        <label for="inov_proces">Proces de productie nou</label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="inov_org" value="Inovatie organizationala">
+                        <label for="inov_org">Inovatie organizationala</label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="inov_soft" value="Software/platforma digitala">
+                        <label for="inov_soft">Software/platforma digitala</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Noutatea inovatiei</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" name="noutate" id="nout_eu" value="La nivel european/international">
+                        <label for="nout_eu">La nivel european/international</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="noutate" id="nout_nat" value="La nivel national">
+                        <label for="nout_nat">La nivel national</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="noutate" id="nout_reg" value="La nivel regional/local">
+                        <label for="nout_reg">La nivel regional/local</label>
+                    </div>
+                </div>
+                <div class="info-box">Noutatea la nivel european/international aduce punctaj maxim pe apelurile IR 1.1B Vest si scoring superior pe PTI.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: TRL -->
+    <div class="section" id="section5">
+        <div class="section-header" onclick="toggleSection(5)">
+            <h2>5. Nivel de Maturitate Tehnologica (TRL)</h2>
+            <span class="arrow" id="arrow5">&#9660;</span>
+        </div>
+        <div class="section-body" id="body5">
+            <div class="warning-box">TRL (Technology Readiness Level) indica cat de matura este tehnologia/solutia. Raspunsurile de mai jos ne ajuta sa estimam TRL-ul curent.</div>
+
+            <div class="field-group">
+                <label>In ce stadiu se afla solutia/produsul?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" name="trl" id="trl12" value="TRL 1-2: Idee / cercetare fundamentala">
+                        <label for="trl12">TRL 1-2: Idee / cercetare fundamentala</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="trl" id="trl3" value="TRL 3: Dovada concept">
+                        <label for="trl3">TRL 3: Dovada concept (proof of concept)</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="trl" id="trl4" value="TRL 4: Validare in laborator">
+                        <label for="trl4">TRL 4: Validare in laborator</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="trl" id="trl56" value="TRL 5-6: Validare in mediu relevant / prototip">
+                        <label for="trl56">TRL 5-6: Validare in mediu relevant / prototip</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="trl" id="trl7" value="TRL 7: Demonstratie in mediu operational">
+                        <label for="trl7">TRL 7: Demonstratie in mediu operational</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="trl" id="trl8" value="TRL 8: Sistem complet si calificat">
+                        <label for="trl8">TRL 8: Sistem complet si calificat</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="trl" id="trl9" value="TRL 9: Produs pe piata">
+                        <label for="trl9">TRL 9: Produs pe piata</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Detaliati stadiul actual <span class="hint">Ce aveti realizat pana acum? Teste, prototipuri, studii, rezultate?</span></label>
+                <textarea id="detalii_trl" rows="3" placeholder="Descrieti stadiul actual al solutiei..."></textarea>
+            </div>
+
+            <div class="field-group">
+                <label>Aveti rezultate dintr-un proiect anterior (ex: voucher inovare)?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" name="rezultate_anterioare" id="rez_da" value="Da">
+                        <label for="rez_da">Da</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="rezultate_anterioare" id="rez_nu" value="Nu">
+                        <label for="rez_nu">Nu</label>
+                    </div>
+                </div>
+            </div>
+            <div class="field-group">
+                <label>Daca DA, detaliati <span class="hint">Program, titlu, rezultate</span></label>
+                <textarea id="detalii_rezultate" rows="2" placeholder="ex: Voucher inovare, Studiu de fezabilitate AI, rezultat: prototip validat"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: DOMENII TEMATICE -->
+    <div class="section" id="section6">
+        <div class="section-header" onclick="toggleSection(6)">
+            <h2>6. Domenii Tematice si Aliniere Strategica</h2>
+            <span class="arrow" id="arrow6">&#9660;</span>
+        </div>
+        <div class="section-body" id="body6">
+            <!-- 6A STEP -->
+            <div class="subsection-title">6A. Domenii STEP (Strategic Technologies for Europe)</div>
+
+            <div class="field-group">
+                <label>Tehnologii digitale si deep tech</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-option"><input type="checkbox" id="step_semi" value="Semiconductori / Microelectronica"><label for="step_semi">Semiconductori / Microelectronica</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="step_ai" value="Inteligenta Artificiala"><label for="step_ai">Inteligenta Artificiala (AI)</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="step_hpc" value="Calcul de inalta performanta"><label for="step_hpc">Calcul de inalta performanta (HPC)</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="step_quantum" value="Tehnologii cuantice"><label for="step_quantum">Tehnologii cuantice</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="step_5g" value="5G / 6G / Conectivitate"><label for="step_5g">5G / 6G / Conectivitate</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="step_cyber" value="Securitate cibernetica"><label for="step_cyber">Securitate cibernetica</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="step_iot" value="IoT / Robotica / Sisteme autonome"><label for="step_iot">IoT / Robotica / Sisteme autonome</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="step_cloud" value="Cloud computing"><label for="step_cloud">Cloud computing</label></div>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Tehnologii curate</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-option"><input type="checkbox" id="step_solar" value="Energie solara / eoliana / baterii"><label for="step_solar">Energie solara / eoliana / baterii</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="step_pompe" value="Pompe de caldura / Hidrogen verde"><label for="step_pompe">Pompe de caldura / Hidrogen verde</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="step_circular" value="Economie circulara / Materiale avansate"><label for="step_circular">Economie circulara / Materiale avansate</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="step_co2" value="Captare CO2 / Nanomateriale"><label for="step_co2">Captare CO2 / Nanomateriale</label></div>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Biotehnologii</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-option"><input type="checkbox" id="step_genomica" value="Genomica / Inginerie genetica"><label for="step_genomica">Genomica / Inginerie genetica</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="step_farma" value="Farmacogenomica / Terapii celulare"><label for="step_farma">Farmacogenomica / Terapii celulare</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="step_bio" value="Bioreactoare / Bioinformatica"><label for="step_bio">Bioreactoare / Bioinformatica</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="step_diag" value="Diagnosticare avansata / Nanobiotehnologie"><label for="step_diag">Diagnosticare avansata / Nanobiotehnologie</label></div>
+                </div>
+            </div>
+
+            <!-- 6B SNCISI -->
+            <div class="subsection-title">6B. Domenii Specializare Inteligenta (SNCISI)</div>
+            <div class="field-group">
+                <div class="checkbox-group">
+                    <div class="checkbox-option"><input type="checkbox" id="sncisi_bio" value="Bioeconomie"><label for="sncisi_bio">Bioeconomie</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="sncisi_tic" value="TIC"><label for="sncisi_tic">TIC</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="sncisi_energie" value="Energie"><label for="sncisi_energie">Energie</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="sncisi_mediu" value="Mediu"><label for="sncisi_mediu">Mediu</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="sncisi_sanatate" value="Sanatate"><label for="sncisi_sanatate">Sanatate</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="sncisi_materiale" value="Materiale avansate, produse si procese noi"><label for="sncisi_materiale">Materiale avansate, produse si procese noi</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="sncisi_spatiu" value="Spatiu si securitate"><label for="sncisi_spatiu">Spatiu si securitate</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="sncisi_transport" value="Transport durabil"><label for="sncisi_transport">Transport durabil</label></div>
+                </div>
+            </div>
+
+            <!-- 6C RIS3 Vest -->
+            <div class="subsection-title">6C. Domenii RIS 3 Vest</div>
+            <div class="field-group">
+                <div class="checkbox-group">
+                    <div class="checkbox-option"><input type="checkbox" id="ris3_agri" value="Agricultura si industria alimentara"><label for="ris3_agri">Agricultura si industria alimentara</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="ris3_energie" value="Eficienta energetica si constructii durabile"><label for="ris3_energie">Eficienta energetica si constructii durabile</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="ris3_creative" value="Industrii culturale si creative"><label for="ris3_creative">Industrii culturale si creative</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="ris3_manuf" value="Industrie prelucrare/manufacturiera"><label for="ris3_manuf">Industrie prelucrare/manufacturiera</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="ris3_it" value="IT si automotive"><label for="ris3_it">IT si automotive</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="ris3_turism" value="Turism, sanatate, calitatea vietii"><label for="ris3_turism">Turism, sanatate, calitatea vietii</label></div>
+                </div>
+            </div>
+
+            <!-- 6D Obiective orizontale -->
+            <div class="subsection-title">6D. Contributie la Obiective Orizontale</div>
+            <div class="field-group">
+                <label>Proiectul contribuie la:</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-option"><input type="checkbox" id="oriz_co2" value="Reducere emisii CO2"><label for="oriz_co2">Reducere emisii CO2</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="oriz_climat" value="Rezilienta climatica"><label for="oriz_climat">Rezilienta climatica</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="oriz_circular" value="Economie circulara"><label for="oriz_circular">Economie circulara</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="oriz_none" value="Niciuna"><label for="oriz_none">Niciuna din cele de mai sus</label></div>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Contribuie la suveranitatea tehnologica UE?</label>
+                <div class="radio-group">
+                    <div class="radio-option"><input type="radio" name="suveranitate" id="suv_reduce" value="Da, reduce dependenta critica"><label for="suv_reduce">Da, reduce dependenta critica</label></div>
+                    <div class="radio-option"><input type="radio" name="suveranitate" id="suv_previne" value="Da, previne dependenta viitoare"><label for="suv_previne">Da, previne dependenta viitoare</label></div>
+                    <div class="radio-option"><input type="radio" name="suveranitate" id="suv_nu" value="Nu / Nu stiu"><label for="suv_nu">Nu / Nu stiu</label></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 7: BUGET -->
+    <div class="section" id="section7">
+        <div class="section-header" onclick="toggleSection(7)">
+            <h2>7. Buget si Investitie Estimata</h2>
+            <span class="arrow" id="arrow7">&#9660;</span>
+        </div>
+        <div class="section-body" id="body7">
+            <div class="field-group">
+                <label>Valoare totala estimata a proiectului (EUR)</label>
+                <input type="text" id="buget_total" placeholder="ex: 2,000,000 EUR">
+            </div>
+            <div class="two-cols">
+                <div class="field-group">
+                    <label>Din care, investitii in echipamente/active</label>
+                    <input type="text" id="buget_echipamente" placeholder="ex: 800,000 EUR">
+                </div>
+                <div class="field-group">
+                    <label>Din care, costuri cercetare-dezvoltare</label>
+                    <input type="text" id="buget_cd" placeholder="ex: 600,000 EUR">
+                </div>
+            </div>
+            <div class="two-cols">
+                <div class="field-group">
+                    <label>Din care, costuri personal (salarii echipa)</label>
+                    <input type="text" id="buget_personal" placeholder="ex: 400,000 EUR">
+                </div>
+                <div class="field-group">
+                    <label>Din care, servicii consultanta / externalizate</label>
+                    <input type="text" id="buget_consultanta" placeholder="ex: 200,000 EUR">
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Puteti asigura cofinantarea proprie?</label>
+                <div class="radio-group">
+                    <div class="radio-option"><input type="radio" name="cofinantare" id="cofin_proprii" value="Da, din surse proprii"><label for="cofin_proprii">Da, din surse proprii</label></div>
+                    <div class="radio-option"><input type="radio" name="cofinantare" id="cofin_credit" value="Da, din credit bancar"><label for="cofin_credit">Da, din credit bancar</label></div>
+                    <div class="radio-option"><input type="radio" name="cofinantare" id="cofin_partial" value="Partial"><label for="cofin_partial">Partial</label></div>
+                    <div class="radio-option"><input type="radio" name="cofinantare" id="cofin_nustiu" value="Nu stiu inca"><label for="cofin_nustiu">Nu stiu inca</label></div>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Procent cofinantare proprie disponibil <span class="hint">ex: 30%, 50%</span></label>
+                <input type="text" id="procent_cofinantare" placeholder="ex: 40%">
+            </div>
+
+            <div class="warning-box">Cofinantarea variaza: A2.1 (0-60%), PTI (0-55%), STEP NV (29-50%), IR 1.1B Vest (10-40%).</div>
+        </div>
+    </div>
+
+    <!-- SECTION 8: ECHIPA SI PARTENERIATE -->
+    <div class="section" id="section8">
+        <div class="section-header" onclick="toggleSection(8)">
+            <h2>8. Echipa Proiect si Parteneriate</h2>
+            <span class="arrow" id="arrow8">&#9660;</span>
+        </div>
+        <div class="section-body" id="body8">
+            <div class="subsection-title">8A. Echipa Interna</div>
+            <div class="two-cols">
+                <div class="field-group">
+                    <label>Director/Manager proiect propus <span class="hint">Nume, experienta (ani)</span></label>
+                    <input type="text" id="manager_proiect" placeholder="ex: Ion Popescu, 15 ani experienta">
+                </div>
+                <div class="field-group">
+                    <label>Nr. experti tehnici interni disponibili</label>
+                    <input type="number" id="nr_experti" placeholder="ex: 4">
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Aveti acces la expert extern cu 10+ ani experienta?</label>
+                <div class="radio-group">
+                    <div class="radio-option"><input type="radio" name="expert_extern" id="exp_ext_da" value="Da"><label for="exp_ext_da">Da</label></div>
+                    <div class="radio-option"><input type="radio" name="expert_extern" id="exp_ext_nu" value="Nu"><label for="exp_ext_nu">Nu</label></div>
+                    <div class="radio-option"><input type="radio" name="expert_extern" id="exp_ext_pot" value="Putem identifica"><label for="exp_ext_pot">Putem identifica</label></div>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Aveti auditor IT certificat CISA/CISSP?</label>
+                <div class="radio-group">
+                    <div class="radio-option"><input type="radio" name="auditor_cisa" id="cisa_intern" value="Da, intern"><label for="cisa_intern">Da, intern</label></div>
+                    <div class="radio-option"><input type="radio" name="auditor_cisa" id="cisa_extern" value="Da, extern identificat"><label for="cisa_extern">Da, extern identificat</label></div>
+                    <div class="radio-option"><input type="radio" name="auditor_cisa" id="cisa_nu" value="Nu"><label for="cisa_nu">Nu</label></div>
+                </div>
+                <div class="warning-box">Auditor CISA/CISSP este obligatoriu pentru A2.1 PoCIDIF. Pentru celelalte apeluri nu este cerinta.</div>
+            </div>
+
+            <div class="subsection-title">8B. Parteneriate</div>
+            <div class="field-group">
+                <label>Aveti parteneriate existente cu:</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-option"><input type="checkbox" id="part_uni" value="Universitate / Institut de cercetare din Romania"><label for="part_uni">Universitate / Institut de cercetare din Romania</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="part_oc" value="Organizatie de cercetare publica"><label for="part_oc">Organizatie de cercetare publica</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="part_companii" value="Alte companii din lantul de productie"><label for="part_companii">Alte companii din lantul de productie</label></div>
+                    <div class="checkbox-option"><input type="checkbox" id="part_cdi_int" value="Entitati CDI din alte tari"><label for="part_cdi_int">Entitati CDI din alte tari</label></div>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Sunteti deschisi la parteneriat cu o organizatie de cercetare?</label>
+                <div class="radio-group">
+                    <div class="radio-option"><input type="radio" name="parteneriat_oc" id="poc_da" value="Da"><label for="poc_da">Da</label></div>
+                    <div class="radio-option"><input type="radio" name="parteneriat_oc" id="poc_nu" value="Nu"><label for="poc_nu">Nu</label></div>
+                    <div class="radio-option"><input type="radio" name="parteneriat_oc" id="poc_dep" value="Depinde de conditii"><label for="poc_dep">Depinde de conditii</label></div>
+                </div>
+                <div class="warning-box">Parteneriat cu organizatie de cercetare publica este OBLIGATORIU pentru PTI. Optional dar punctat suplimentar la IR 1.1B Vest.</div>
+            </div>
+
+            <div class="field-group">
+                <label>Scrisori de sustinere disponibile <span class="hint">Nationale (nr.), UE (nr.), Internationale (nr.) - relevante pt STEP NV</span></label>
+                <input type="text" id="scrisori_sustinere" placeholder="ex: 2 nationale, 1 UE, 1 internationala">
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 9: REZULTATE ASTEPTATE -->
+    <div class="section" id="section9">
+        <div class="section-header" onclick="toggleSection(9)">
+            <h2>9. Rezultate Asteptate si Impact</h2>
+            <span class="arrow" id="arrow9">&#9660;</span>
+        </div>
+        <div class="section-body" id="body9">
+            <div class="two-cols">
+                <div class="field-group">
+                    <label>Locuri de munca noi create prin proiect</label>
+                    <input type="number" id="locuri_munca" placeholder="ex: 10">
+                </div>
+                <div class="field-group">
+                    <label>Crestere estimata cifra de afaceri (%) <span class="hint">In anul 4 dupa finalizare vs. media ultimilor 3 ani. Min 10% pt IR 1.1B</span></label>
+                    <input type="text" id="crestere_ca" placeholder="ex: 25%">
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Venituri din exploatare cumulate pe 3 ani (% din grant) <span class="hint">Relevant STEP NV: >20% = 6 pct, >15% = 4, >10% = 3, >5% = 2</span></label>
+                <input type="text" id="venituri_exploatare" placeholder="ex: 18%">
+            </div>
+
+            <div class="field-group">
+                <label>Markup estimat pret produs vs. cost productie</label>
+                <div class="radio-group">
+                    <div class="radio-option"><input type="radio" name="markup" id="mk_50" value=">50%"><label for="mk_50">&gt;50% (cu justificare competitiva)</label></div>
+                    <div class="radio-option"><input type="radio" name="markup" id="mk_30" value=">30%"><label for="mk_30">&gt;30% (cu analiza piata)</label></div>
+                    <div class="radio-option"><input type="radio" name="markup" id="mk_15" value="15-30%"><label for="mk_15">15-30%</label></div>
+                    <div class="radio-option"><input type="radio" name="markup" id="mk_sub15" value="<15%"><label for="mk_sub15">&lt;15%</label></div>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Potentialul solutiei de a fi scalata international</label>
+                <div class="radio-group">
+                    <div class="radio-option"><input type="radio" name="scalare" id="scal_conf" value="Da, cu parteneri confirmati"><label for="scal_conf">Da, cu parteneri confirmati</label></div>
+                    <div class="radio-option"><input type="radio" name="scalare" id="scal_pot" value="Da, potentialul exista"><label for="scal_pot">Da, potentialul exista</label></div>
+                    <div class="radio-option"><input type="radio" name="scalare" id="scal_nat" value="Doar piata nationala"><label for="scal_nat">Doar piata nationala</label></div>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Efecte de spillover in alte state UE</label>
+                <div class="radio-group">
+                    <div class="radio-option"><input type="radio" name="spillover" id="spill_da" value="Da"><label for="spill_da">Da</label></div>
+                    <div class="radio-option"><input type="radio" name="spillover" id="spill_nu" value="Nu / Nu stiu"><label for="spill_nu">Nu / Nu stiu</label></div>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Alte rezultate relevante <span class="hint">Brevete, publicatii, transfer tehnologic, colaborari noi etc.</span></label>
+                <textarea id="alte_rezultate" rows="3" placeholder="Descrieti alte rezultate asteptate..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 10: DISPONIBILITATE -->
+    <div class="section" id="section10">
+        <div class="section-header" onclick="toggleSection(10)">
+            <h2>10. Disponibilitate si Calendar</h2>
+            <span class="arrow" id="arrow10">&#9660;</span>
+        </div>
+        <div class="section-body" id="body10">
+            <div class="field-group">
+                <label>Cand doriti sa depuneti proiectul?</label>
+                <div class="radio-group">
+                    <div class="radio-option"><input type="radio" name="calendar" id="cal_asap" value="Cat mai curand posibil"><label for="cal_asap">Cat mai curand posibil</label></div>
+                    <div class="radio-option"><input type="radio" name="calendar" id="cal_3" value="In urmatoarele 3 luni"><label for="cal_3">In urmatoarele 3 luni</label></div>
+                    <div class="radio-option"><input type="radio" name="calendar" id="cal_6" value="In urmatoarele 6 luni"><label for="cal_6">In urmatoarele 6 luni</label></div>
+                    <div class="radio-option"><input type="radio" name="calendar" id="cal_explor" value="Doar explorez optiunile"><label for="cal_explor">Doar explorez optiunile</label></div>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Aveti studiu de fezabilitate sau plan de afaceri?</label>
+                <div class="radio-group">
+                    <div class="radio-option"><input type="radio" name="studiu_fez" id="sf_da" value="Da, actualizat"><label for="sf_da">Da, actualizat</label></div>
+                    <div class="radio-option"><input type="radio" name="studiu_fez" id="sf_vechi" value="Da, dar necesita actualizare"><label for="sf_vechi">Da, dar necesita actualizare</label></div>
+                    <div class="radio-option"><input type="radio" name="studiu_fez" id="sf_nu" value="Nu"><label for="sf_nu">Nu</label></div>
+                </div>
+            </div>
+
+            <div class="two-cols">
+                <div class="field-group">
+                    <label>Aveti situatii financiare depuse la zi?</label>
+                    <div class="radio-group">
+                        <div class="radio-option"><input type="radio" name="sit_fin" id="sitfin_da" value="Da"><label for="sitfin_da">Da</label></div>
+                        <div class="radio-option"><input type="radio" name="sit_fin" id="sitfin_nu" value="Nu"><label for="sitfin_nu">Nu</label></div>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label>Aveti certificat de atestare fiscala valid?</label>
+                    <div class="radio-group">
+                        <div class="radio-option"><input type="radio" name="cert_fiscal" id="cert_da" value="Da"><label for="cert_da">Da</label></div>
+                        <div class="radio-option"><input type="radio" name="cert_fiscal" id="cert_nu" value="Nu"><label for="cert_nu">Nu</label></div>
+                        <div class="radio-option"><input type="radio" name="cert_fiscal" id="cert_rapid" value="Il pot obtine rapid"><label for="cert_rapid">Rapid</label></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Alte informatii pe care le considerati relevante <span class="hint">Mentionati orice element care ar putea influenta eligibilitatea sau selectia proiectului.</span></label>
+                <textarea id="alte_informatii" rows="4" placeholder="Orice informatii suplimentare relevante..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- ELIGIBILITY PANEL -->
+    <div class="eligibility-panel" id="eligibilityPanel">
+        <h3>&#128202; Rezultat Evaluare Preliminara Eligibilitate</h3>
+        <div id="eligibilityResults"></div>
+    </div>
+
+    <!-- REFERINTA APELURI -->
+    <div class="section" id="sectionRef">
+        <div class="section-header" onclick="toggleSection('Ref')">
+            <h2>Referinta: Apeluri de Finantare Acoperite</h2>
+            <span class="arrow" id="arrowRef">&#9660;</span>
+        </div>
+        <div class="section-body" id="bodyRef">
+            <p style="color:var(--text-light); font-size:0.9em; margin-bottom:12px;">Tabelul de mai jos prezinta sintetic principalele apeluri pe care acest chestionar le acopera.</p>
+            <div style="overflow-x:auto;">
+                <table class="ref-table">
+                    <thead>
+                        <tr><th>Apel</th><th>Grant (EUR)</th><th>Durata</th><th>TRL min</th><th>Regiune</th><th>Particularitati cheie</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>A2.1 PoCIDIF</strong></td><td>200K - 3M</td><td>24 luni</td><td>TRL 4</td><td>National</td><td>Doar IMM. Software/TIC. Auditor CISA obligatoriu.</td></tr>
+                        <tr><td><strong>PTI PoCIDIF</strong></td><td>max 1.5M</td><td>24 luni</td><td>TRL 4</td><td>National</td><td>Parteneriat OC+IMM obligatoriu. 8 domenii SNCISI.</td></tr>
+                        <tr><td><strong>STEP Nord-Vest</strong></td><td>5M - 10M</td><td>36 luni</td><td>TRL 4</td><td>Nord-Vest</td><td>IMM+Mari. 3 domenii STEP. Scrisori sustinere.</td></tr>
+                        <tr><td><strong>IR 1.1B Vest</strong></td><td>200K - 550K</td><td>16-24 luni</td><td>TRL 3/6</td><td>Vest</td><td>Doar IMM. RIS3 Vest. Min 10% crestere CA.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- BUTTONS -->
+    <div class="btn-container">
+        <button class="btn btn-primary" onclick="evaluateEligibility()">&#128202; Evalueaza Eligibilitatea</button>
+        <button class="btn btn-success" onclick="exportToExcel()">&#128229; Exporta in Excel</button>
+        <button class="btn btn-outline" onclick="saveLocally()">&#128190; Salveaza Local</button>
+        <button class="btn btn-outline" onclick="printForm()">&#128424; Printeaza / PDF</button>
+        <button class="btn btn-danger" onclick="resetForm()">&#128465; Reseteaza</button>
+    </div>
+
+</div>
+
+<div class="autosave-indicator" id="autosaveIndicator">&#128190; Salvat automat</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================== UTILITY FUNCTIONS =====================
+const STORAGE_KEY = 'intellink_chestionar_evaluare_v1';
+const TOTAL_SECTIONS = 10;
+
+function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.className = 'toast', 3000);
+}
+
+function toggleSection(n) {
+    const body = document.getElementById('body' + n);
+    const arrow = document.getElementById('arrow' + n);
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open');
+    arrow.classList.toggle('open');
+}
+
+// ===================== STEP INDICATOR =====================
+function buildStepIndicator() {
+    const container = document.getElementById('stepIndicator');
+    for (let i = 1; i <= TOTAL_SECTIONS; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'step-dot' + (i === 1 ? ' active' : '');
+        dot.textContent = i;
+        dot.id = 'stepDot' + i;
+        dot.onclick = () => {
+            document.getElementById('section' + i).scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+        container.appendChild(dot);
+    }
+}
+buildStepIndicator();
+
+// ===================== PROGRESS TRACKING =====================
+function updateProgress() {
+    const allInputs = document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], input[type="email"], input[type="tel"], select, textarea');
+    const allRadioGroups = new Set();
+    document.querySelectorAll('input[type="radio"]').forEach(r => allRadioGroups.add(r.name));
+
+    let filled = 0;
+    let total = 0;
+
+    allInputs.forEach(inp => {
+        if (inp.offsetParent !== null) { // visible
+            total++;
+            if (inp.value && inp.value.trim()) filled++;
+        }
+    });
+
+    allRadioGroups.forEach(name => {
+        total++;
+        if (document.querySelector(`input[name="${name}"]:checked`)) filled++;
+    });
+
+    const pct = total > 0 ? Math.round((filled / total) * 100) : 0;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressText').textContent = pct + '%';
+
+    // Update step dots
+    for (let i = 1; i <= TOTAL_SECTIONS; i++) {
+        const section = document.getElementById('body' + i);
+        if (!section) continue;
+        const inputs = section.querySelectorAll('input, select, textarea');
+        let secFilled = 0, secTotal = 0;
+        inputs.forEach(inp => {
+            if (inp.type === 'radio') {
+                if (!inp.previousElementSibling) { // first radio of group
+                    secTotal++;
+                    if (document.querySelector(`input[name="${inp.name}"]:checked`)) secFilled++;
+                }
+            } else if (inp.type === 'checkbox') {
+                // skip individual checkboxes
+            } else {
+                secTotal++;
+                if (inp.value && inp.value.trim()) secFilled++;
+            }
+        });
+        const dot = document.getElementById('stepDot' + i);
+        if (dot) {
+            if (secTotal > 0 && secFilled === secTotal) {
+                dot.classList.add('completed');
+            } else {
+                dot.classList.remove('completed');
+            }
+        }
+    }
+}
+
+// ===================== AUTO-SAVE =====================
+function collectFormData() {
+    const data = {};
+
+    // Text/number/date/select inputs
+    document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], input[type="email"], input[type="tel"], select, textarea').forEach(inp => {
+        if (inp.id) data[inp.id] = inp.value;
+    });
+
+    // Radio buttons
+    document.querySelectorAll('input[type="radio"]:checked').forEach(r => {
+        data['radio_' + r.name] = r.value;
+    });
+
+    // Checkboxes
+    document.querySelectorAll('input[type="checkbox"]:checked').forEach(c => {
+        if (c.id) data['cb_' + c.id] = true;
+    });
+
+    return data;
+}
+
+function restoreFormData() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return;
+        const data = JSON.parse(saved);
+
+        Object.keys(data).forEach(key => {
+            if (key.startsWith('radio_')) {
+                const name = key.replace('radio_', '');
+                const radio = document.querySelector(`input[name="${name}"][value="${data[key]}"]`);
+                if (radio) radio.checked = true;
+            } else if (key.startsWith('cb_')) {
+                const id = key.replace('cb_', '');
+                const cb = document.getElementById(id);
+                if (cb) cb.checked = true;
+            } else {
+                const el = document.getElementById(key);
+                if (el) el.value = data[key];
+            }
+        });
+
+        updateProgress();
+    } catch (e) { console.log('Restore error:', e); }
+}
+
+function autoSave() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(collectFormData()));
+        const ind = document.getElementById('autosaveIndicator');
+        ind.classList.add('show');
+        setTimeout(() => ind.classList.remove('show'), 1500);
+    } catch (e) { console.log('Autosave error:', e); }
+}
+
+function saveLocally() {
+    autoSave();
+    showToast('Datele au fost salvate local in browser!', 'success');
+}
+
+// Event listeners for auto-save and progress
+document.querySelectorAll('input, select, textarea').forEach(el => {
+    el.addEventListener('change', () => { updateProgress(); autoSave(); });
+    el.addEventListener('input', () => { updateProgress(); });
+});
+
+// ===================== ELIGIBILITY EVALUATION =====================
+function evaluateEligibility() {
+    const regiune = document.getElementById('regiune').value;
+    const dimensiune = document.getElementById('dimensiune').value;
+    const datoriiStat = document.querySelector('input[name="datorii_stat"]:checked');
+    const dificultate = document.querySelector('input[name="dificultate"]:checked');
+    const trl = document.querySelector('input[name="trl"]:checked');
+    const auditorCisa = document.querySelector('input[name="auditor_cisa"]:checked');
+    const parteneriatOc = document.querySelector('input[name="parteneriat_oc"]:checked');
+
+    // STEP checkboxes
+    const stepChecked = document.querySelectorAll('#step_semi:checked, #step_ai:checked, #step_hpc:checked, #step_quantum:checked, #step_5g:checked, #step_cyber:checked, #step_iot:checked, #step_cloud:checked, #step_solar:checked, #step_pompe:checked, #step_circular:checked, #step_co2:checked, #step_genomica:checked, #step_farma:checked, #step_bio:checked, #step_diag:checked').length > 0;
+
+    // SNCISI checkboxes
+    const sncisiChecked = document.querySelectorAll('#sncisi_bio:checked, #sncisi_tic:checked, #sncisi_energie:checked, #sncisi_mediu:checked, #sncisi_sanatate:checked, #sncisi_materiale:checked, #sncisi_spatiu:checked, #sncisi_transport:checked').length > 0;
+
+    // RIS3 Vest
+    const ris3Checked = document.querySelectorAll('#ris3_agri:checked, #ris3_energie:checked, #ris3_creative:checked, #ris3_manuf:checked, #ris3_it:checked, #ris3_turism:checked').length > 0;
+
+    // Innovation type - software/digital
+    const isSoftware = document.getElementById('inov_soft').checked;
+
+    // Partnerships
+    const hasOcPartnership = document.getElementById('part_oc').checked || document.getElementById('part_uni').checked;
+
+    const isIMM = ['Micro', 'Mica', 'Mijlocie'].includes(dimensiune);
+    const isMare = dimensiune === 'Mare';
+    const hasDatorii = datoriiStat && datoriiStat.value === 'Da';
+    const inDificultate = dificultate && dificultate.value === 'Da';
+
+    // TRL value
+    let trlValue = 0;
+    if (trl) {
+        if (trl.value.includes('TRL 1-2')) trlValue = 2;
+        else if (trl.value.includes('TRL 3')) trlValue = 3;
+        else if (trl.value.includes('TRL 4')) trlValue = 4;
+        else if (trl.value.includes('TRL 5-6')) trlValue = 5;
+        else if (trl.value.includes('TRL 7')) trlValue = 7;
+        else if (trl.value.includes('TRL 8')) trlValue = 8;
+        else if (trl.value.includes('TRL 9')) trlValue = 9;
+    }
+
+    const results = [];
+
+    // ========= A2.1 PoCIDIF =========
+    {
+        const criteria = [];
+        let status = 'eligible';
+
+        if (isIMM) criteria.push({ text: 'IMM - Da', cls: 'pass' });
+        else { criteria.push({ text: 'Doar IMM - compania nu este IMM', cls: 'fail' }); status = 'ineligible'; }
+
+        if (!hasDatorii) criteria.push({ text: 'Fara datorii la stat', cls: 'pass' });
+        else { criteria.push({ text: 'Are datorii la bugetul de stat', cls: 'fail' }); status = 'ineligible'; }
+
+        if (!inDificultate) criteria.push({ text: 'Nu este in dificultate', cls: 'pass' });
+        else { criteria.push({ text: 'Companie in dificultate financiara', cls: 'fail' }); status = 'ineligible'; }
+
+        if (trlValue >= 4) criteria.push({ text: 'TRL >= 4 - Da (' + trlValue + ')', cls: 'pass' });
+        else if (trlValue > 0) { criteria.push({ text: 'TRL minim 4 necesar (actual: ' + trlValue + ')', cls: 'fail' }); status = 'ineligible'; }
+        else criteria.push({ text: 'TRL - necompletat', cls: 'warn' });
+
+        if (isSoftware || sncisiChecked) criteria.push({ text: 'Domeniu Software/TIC relevant', cls: 'pass' });
+        else { criteria.push({ text: 'Verificati daca activitatea este in domeniul Software/TIC', cls: 'warn' }); if (status === 'eligible') status = 'partial'; }
+
+        if (auditorCisa && auditorCisa.value !== 'Nu') criteria.push({ text: 'Auditor CISA/CISSP disponibil', cls: 'pass' });
+        else { criteria.push({ text: 'Auditor CISA/CISSP OBLIGATORIU - nu este disponibil', cls: 'fail' }); if (status !== 'ineligible') status = 'partial'; }
+
+        results.push({ name: 'A2.1 PoCIDIF', grant: '200K - 3M EUR', status, criteria });
+    }
+
+    // ========= PTI PoCIDIF =========
+    {
+        const criteria = [];
+        let status = 'eligible';
+
+        if (!hasDatorii) criteria.push({ text: 'Fara datorii la stat', cls: 'pass' });
+        else { criteria.push({ text: 'Are datorii la bugetul de stat', cls: 'fail' }); status = 'ineligible'; }
+
+        if (!inDificultate) criteria.push({ text: 'Nu este in dificultate', cls: 'pass' });
+        else { criteria.push({ text: 'Companie in dificultate financiara', cls: 'fail' }); status = 'ineligible'; }
+
+        if (trlValue >= 4) criteria.push({ text: 'TRL >= 4 - Da (' + trlValue + ')', cls: 'pass' });
+        else if (trlValue > 0) { criteria.push({ text: 'TRL minim 4 necesar (actual: ' + trlValue + ')', cls: 'fail' }); status = 'ineligible'; }
+        else criteria.push({ text: 'TRL - necompletat', cls: 'warn' });
+
+        if (sncisiChecked) criteria.push({ text: 'Domeniu SNCISI selectat', cls: 'pass' });
+        else { criteria.push({ text: 'Selectati cel putin un domeniu SNCISI', cls: 'fail' }); if (status !== 'ineligible') status = 'partial'; }
+
+        if (hasOcPartnership) criteria.push({ text: 'Parteneriat OC/Universitate disponibil', cls: 'pass' });
+        else if (parteneriatOc && parteneriatOc.value === 'Da') { criteria.push({ text: 'Deschis la parteneriat OC', cls: 'warn' }); if (status === 'eligible') status = 'partial'; }
+        else { criteria.push({ text: 'Parteneriat OC OBLIGATORIU - nu este disponibil', cls: 'fail' }); if (status !== 'ineligible') status = 'partial'; }
+
+        results.push({ name: 'PTI PoCIDIF', grant: 'max 1.5M EUR', status, criteria });
+    }
+
+    // ========= STEP Nord-Vest =========
+    {
+        const criteria = [];
+        let status = 'eligible';
+
+        if (regiune === 'Nord-Vest') criteria.push({ text: 'Regiune Nord-Vest - Da', cls: 'pass' });
+        else if (regiune) { criteria.push({ text: 'Regiune necesara: Nord-Vest (actual: ' + regiune + ')', cls: 'fail' }); status = 'ineligible'; }
+        else criteria.push({ text: 'Regiune - necompletata', cls: 'warn' });
+
+        if (isIMM || isMare) criteria.push({ text: 'IMM sau Mare - Da (' + dimensiune + ')', cls: 'pass' });
+        else criteria.push({ text: 'Dimensiune companie - necompletata', cls: 'warn' });
+
+        if (!hasDatorii) criteria.push({ text: 'Fara datorii la stat', cls: 'pass' });
+        else { criteria.push({ text: 'Are datorii la bugetul de stat', cls: 'fail' }); status = 'ineligible'; }
+
+        if (!inDificultate) criteria.push({ text: 'Nu este in dificultate', cls: 'pass' });
+        else { criteria.push({ text: 'Companie in dificultate financiara', cls: 'fail' }); status = 'ineligible'; }
+
+        if (trlValue >= 4) criteria.push({ text: 'TRL >= 4 - Da (' + trlValue + ')', cls: 'pass' });
+        else if (trlValue > 0) { criteria.push({ text: 'TRL minim 4 necesar (actual: ' + trlValue + ')', cls: 'fail' }); status = 'ineligible'; }
+        else criteria.push({ text: 'TRL - necompletat', cls: 'warn' });
+
+        if (stepChecked) criteria.push({ text: 'Domeniu STEP selectat', cls: 'pass' });
+        else { criteria.push({ text: 'Selectati cel putin un domeniu STEP', cls: 'fail' }); if (status !== 'ineligible') status = 'partial'; }
+
+        results.push({ name: 'STEP Nord-Vest', grant: '5M - 10M EUR', status, criteria });
+    }
+
+    // ========= IR 1.1B Vest =========
+    {
+        const criteria = [];
+        let status = 'eligible';
+
+        if (regiune === 'Vest') criteria.push({ text: 'Regiune Vest - Da', cls: 'pass' });
+        else if (regiune) { criteria.push({ text: 'Regiune necesara: Vest (actual: ' + regiune + ')', cls: 'fail' }); status = 'ineligible'; }
+        else criteria.push({ text: 'Regiune - necompletata', cls: 'warn' });
+
+        if (isIMM) criteria.push({ text: 'IMM - Da', cls: 'pass' });
+        else if (dimensiune) { criteria.push({ text: 'Doar IMM - compania nu este IMM', cls: 'fail' }); status = 'ineligible'; }
+        else criteria.push({ text: 'Dimensiune - necompletata', cls: 'warn' });
+
+        if (!hasDatorii) criteria.push({ text: 'Fara datorii la stat', cls: 'pass' });
+        else { criteria.push({ text: 'Are datorii la bugetul de stat', cls: 'fail' }); status = 'ineligible'; }
+
+        if (!inDificultate) criteria.push({ text: 'Nu este in dificultate', cls: 'pass' });
+        else { criteria.push({ text: 'Companie in dificultate financiara', cls: 'fail' }); status = 'ineligible'; }
+
+        if (trlValue >= 3) criteria.push({ text: 'TRL >= 3 - Da (' + trlValue + ')', cls: 'pass' });
+        else if (trlValue > 0) { criteria.push({ text: 'TRL minim 3 necesar (actual: ' + trlValue + ')', cls: 'fail' }); status = 'ineligible'; }
+        else criteria.push({ text: 'TRL - necompletat', cls: 'warn' });
+
+        if (ris3Checked) criteria.push({ text: 'Domeniu RIS3 Vest selectat', cls: 'pass' });
+        else { criteria.push({ text: 'Selectati cel putin un domeniu RIS3 Vest', cls: 'fail' }); if (status !== 'ineligible') status = 'partial'; }
+
+        results.push({ name: 'IR 1.1B Vest', grant: '200K - 550K EUR', status, criteria });
+    }
+
+    // Sort: eligible first, then partial, then ineligible
+    const order = { eligible: 0, partial: 1, ineligible: 2 };
+    results.sort((a, b) => order[a.status] - order[b.status]);
+
+    // Render
+    const panel = document.getElementById('eligibilityPanel');
+    const container = document.getElementById('eligibilityResults');
+    container.innerHTML = '';
+
+    results.forEach(r => {
+        const statusText = r.status === 'eligible' ? 'ELIGIBIL' : r.status === 'partial' ? 'PARTIAL / DE VERIFICAT' : 'NEELIGIBIL';
+        const card = document.createElement('div');
+        card.className = 'elig-card ' + r.status;
+        card.innerHTML = `
+            <span class="status-badge">${statusText}</span>
+            <h4>${r.name} <span style="font-weight:400;color:var(--text-light);font-size:0.85em;">(${r.grant})</span></h4>
+            <ul class="elig-criteria">${r.criteria.map(c => `<li class="${c.cls}">${c.text}</li>`).join('')}</ul>
+        `;
+        container.appendChild(card);
+    });
+
+    panel.classList.add('visible');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showToast('Evaluarea eligibilitatii a fost generata!', 'success');
+}
+
+// ===================== EXPORT TO EXCEL =====================
+function exportToExcel() {
+    const data = collectFormData();
+    const companyName = data.denumire_companie || 'Client';
+    const today = new Date().toISOString().split('T')[0];
+
+    // Build structured rows
+    const rows = [
+        ['CHESTIONAR DE EVALUARE PRELIMINARA'],
+        ['Analiza eligibilitate oportunitati de finantare'],
+        ['Data completare:', today],
+        [''],
+        ['=== 1. DATE GENERALE COMPANIE ==='],
+        ['Denumire companie', data.denumire_companie || ''],
+        ['CUI / CIF', data.cui || ''],
+        ['Nr. inregistrare ONRC', data.nr_onrc || ''],
+        ['Data infiintarii', data.data_infiintare || ''],
+        ['Adresa sediu social', data.adresa_sediu || ''],
+        ['Regiunea de dezvoltare', data.regiune || ''],
+        ['Dimensiune companie', data.radio_dimensiune || data.dimensiune || ''],
+        ['Nr. mediu angajati', data.nr_angajati || ''],
+        ['Cod CAEN principal', data.caen_principal || ''],
+        ['Coduri CAEN secundare', data.caen_secundare || ''],
+        ['Domeniu de activitate', data.domeniu_activitate || ''],
+        ['Punct de lucru', data.punct_lucru || ''],
+        ['Persoana de contact', data.persoana_contact || ''],
+        ['Telefon / Email', data.telefon_email || ''],
+        [''],
+        ['=== 2. SITUATIE FINANCIARA ==='],
+        ['Cifra de afaceri (ultimul an)', data.ca_ultimul_an || ''],
+        ['Cifra de afaceri (penultimul an)', data.ca_penultimul_an || ''],
+        ['Profit din exploatare', data.profit_exploatare || ''],
+        ['Profit net', data.profit_net || ''],
+        ['Total active', data.total_active || ''],
+        ['Total datorii', data.total_datorii || ''],
+        ['Capitaluri proprii', data.capitaluri_proprii || ''],
+        ['Datorii restante la stat', data.radio_datorii_stat || ''],
+        ['In dificultate financiara', data.radio_dificultate || ''],
+        ['Ajutor de minimis (3 ani)', data.radio_minimis || ''],
+        ['Valoare minimis', data.valoare_minimis || ''],
+        ['Rata solvabilitatii', data.rata_solvabilitate || ''],
+        ['Cash flow pozitiv', data.radio_cashflow || ''],
+        [''],
+        ['=== 3. ACTIVITATE CURENTA ==='],
+        ['Activitate principala', data.activitate_principala || ''],
+        ['Departament CDI', data.radio_cdi || ''],
+        ['Nr. personal CDI', data.nr_personal_cdi || ''],
+        ['Brevete/IP', data.radio_ip || ''],
+        ['Detalii IP', data.detalii_ip || ''],
+        ['Experienta finantare', data.radio_exp_finantare || ''],
+        ['Detalii finantari', data.detalii_finantari || ''],
+        ['Investitii 3 ani', data.investitii_3ani || ''],
+        [''],
+        ['=== 4. NEVOIA DE DEZVOLTARE ==='],
+        ['Nevoia de dezvoltare', data.nevoie_dezvoltare || ''],
+        ['Solutia propusa', data.solutie_proiect || ''],
+        ['Tipul inovatiei', getCheckedValues('inov_')],
+        ['Noutatea inovatiei', data.radio_noutate || ''],
+        [''],
+        ['=== 5. TRL ==='],
+        ['Stadiu TRL', data.radio_trl || ''],
+        ['Detalii stadiu', data.detalii_trl || ''],
+        ['Rezultate anterioare', data.radio_rezultate_anterioare || ''],
+        ['Detalii rezultate', data.detalii_rezultate || ''],
+        [''],
+        ['=== 6. DOMENII TEMATICE ==='],
+        ['Domenii STEP Digital', getCheckedValues('step_')],
+        ['Domenii SNCISI', getCheckedValues('sncisi_')],
+        ['Domenii RIS3 Vest', getCheckedValues('ris3_')],
+        ['Obiective orizontale', getCheckedValues('oriz_')],
+        ['Suveranitate UE', data.radio_suveranitate || ''],
+        [''],
+        ['=== 7. BUGET ==='],
+        ['Valoare totala proiect', data.buget_total || ''],
+        ['Investitii echipamente', data.buget_echipamente || ''],
+        ['Costuri CD', data.buget_cd || ''],
+        ['Costuri personal', data.buget_personal || ''],
+        ['Servicii consultanta', data.buget_consultanta || ''],
+        ['Cofinantare proprie', data.radio_cofinantare || ''],
+        ['Procent cofinantare', data.procent_cofinantare || ''],
+        [''],
+        ['=== 8. ECHIPA SI PARTENERIATE ==='],
+        ['Manager proiect', data.manager_proiect || ''],
+        ['Nr. experti tehnici', data.nr_experti || ''],
+        ['Expert extern 10+ ani', data.radio_expert_extern || ''],
+        ['Auditor CISA/CISSP', data.radio_auditor_cisa || ''],
+        ['Parteneriate existente', getCheckedValues('part_')],
+        ['Deschis parteneriat OC', data.radio_parteneriat_oc || ''],
+        ['Scrisori sustinere', data.scrisori_sustinere || ''],
+        [''],
+        ['=== 9. REZULTATE ASTEPTATE ==='],
+        ['Locuri munca noi', data.locuri_munca || ''],
+        ['Crestere CA (%)', data.crestere_ca || ''],
+        ['Venituri exploatare (% grant)', data.venituri_exploatare || ''],
+        ['Markup pret', data.radio_markup || ''],
+        ['Scalare internationala', data.radio_scalare || ''],
+        ['Spillover UE', data.radio_spillover || ''],
+        ['Alte rezultate', data.alte_rezultate || ''],
+        [''],
+        ['=== 10. DISPONIBILITATE ==='],
+        ['Calendar depunere', data.radio_calendar || ''],
+        ['Studiu fezabilitate', data.radio_studiu_fez || ''],
+        ['Situatii financiare la zi', data.radio_sit_fin || ''],
+        ['Certificat fiscal', data.radio_cert_fiscal || ''],
+        ['Alte informatii', data.alte_informatii || ''],
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+
+    // Column widths
+    ws['!cols'] = [{ wch: 35 }, { wch: 60 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Evaluare Preliminara');
+
+    XLSX.writeFile(wb, `Evaluare_Preliminara_${companyName.replace(/\s+/g, '_')}_${today}.xlsx`);
+    showToast('Exportat cu succes in Excel!', 'success');
+}
+
+function getCheckedValues(prefix) {
+    const checked = [];
+    document.querySelectorAll(`input[type="checkbox"][id^="${prefix}"]:checked`).forEach(cb => {
+        checked.push(cb.value);
+    });
+    return checked.join(', ');
+}
+
+// ===================== PRINT =====================
+function printForm() {
+    // Open all sections before printing
+    for (let i = 1; i <= TOTAL_SECTIONS; i++) {
+        const body = document.getElementById('body' + i);
+        if (body) body.classList.add('open');
+    }
+    window.print();
+}
+
+// ===================== RESET =====================
+function resetForm() {
+    if (!confirm('Sigur doriti sa resetati toate datele? Aceasta actiune este ireversibila.')) return;
+
+    document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], input[type="email"], input[type="tel"], textarea').forEach(inp => inp.value = '');
+    document.querySelectorAll('select').forEach(sel => sel.selectedIndex = 0);
+    document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(inp => inp.checked = false);
+
+    localStorage.removeItem(STORAGE_KEY);
+    document.getElementById('eligibilityPanel').classList.remove('visible');
+    updateProgress();
+    showToast('Formularul a fost resetat.', 'error');
+}
+
+// ===================== SCROLL SPY =====================
+function setupScrollSpy() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const id = entry.target.id;
+                const num = id.replace('section', '');
+                if (num && !isNaN(num)) {
+                    document.querySelectorAll('.step-dot').forEach(d => d.classList.remove('active'));
+                    const dot = document.getElementById('stepDot' + num);
+                    if (dot) dot.classList.add('active');
+                }
+            }
+        });
+    }, { threshold: 0.3 });
+
+    for (let i = 1; i <= TOTAL_SECTIONS; i++) {
+        const section = document.getElementById('section' + i);
+        if (section) observer.observe(section);
+    }
+}
+
+// ===================== INIT =====================
+restoreFormData();
+updateProgress();
+setupScrollSpy();
+</script>
+
+</body>
+</html>

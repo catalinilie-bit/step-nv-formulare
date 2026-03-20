@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>STEP Nord-Vest | INTELLINK - Platformă Formulare</title>
+<title>INTELLINK - Platformă Formulare Finanțare</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
@@ -140,7 +140,7 @@ body {
 
 .cards-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.2rem;
 }
 
@@ -183,6 +183,7 @@ body {
 
 .card-icon.mc { background: linear-gradient(135deg, #dbeafe, #bfdbfe); }
 .card-icon.audit { background: linear-gradient(135deg, #d1fae5, #a7f3d0); }
+.card-icon.eval { background: linear-gradient(135deg, #fef3c7, #fde68a); }
 
 .card-header h2 {
   font-size: 1rem;
@@ -246,6 +247,8 @@ body {
 .card-btn.mc-btn:hover { background: #2c5282; }
 .card-btn.audit-btn { background: #276749; color: #fff; }
 .card-btn.audit-btn:hover { background: #22543d; }
+.card-btn.eval-btn { background: #92400e; color: #fff; }
+.card-btn.eval-btn:hover { background: #78350f; }
 
 .card-footer .time {
   font-size: .72rem;
@@ -293,6 +296,9 @@ body {
 .site-footer a { color: var(--accent2); text-decoration: none; }
 
 /* RESPONSIVE */
+@media (max-width: 960px) {
+  .cards-grid { grid-template-columns: 1fr 1fr; }
+}
 @media (max-width: 680px) {
   .cards-grid { grid-template-columns: 1fr; }
   .info-grid { grid-template-columns: 1fr; }
@@ -309,13 +315,13 @@ body {
       <div class="brand-logo">IL</div>
       <div class="brand-name">INTELLINK</div>
     </div>
-    <h1>Platformă Formulare<br><span>STEP Nord-Vest</span></h1>
-    <p class="tagline">Instrumente digitale pentru pregătirea și evaluarea proiectelor de finanțare STEP — PR Nord-Vest 2021-2027, OS 1.6</p>
+    <h1>Platformă Formulare<br><span>Finanțare & Evaluare</span></h1>
+    <p class="tagline">Instrumente digitale pentru pregătirea, evaluarea și analiza eligibilității proiectelor de finanțare europeană</p>
     <div class="badge-row">
-      <span class="badge">📋 PRNV/2026/961/1</span>
-      <span class="badge">🇪🇺 PR Nord-Vest 2021-2027</span>
-      <span class="badge">🎯 OS 1.6 — STEP</span>
-      <span class="badge">💰 Grant: 5M - 10M EUR</span>
+      <span class="badge">📋 STEP Nord-Vest</span>
+      <span class="badge">🇪🇺 PoCIDIF / PTI / IR 1.1B</span>
+      <span class="badge">🎯 Evaluare Preliminară</span>
+      <span class="badge">💰 Granturi 200K - 10M EUR</span>
     </div>
   </div>
 </div>
@@ -373,6 +379,31 @@ body {
       </div>
     </a>
 
+    <a href="chestionar-evaluare-client.html" class="card">
+      <div class="card-header">
+        <div class="card-icon eval">📝</div>
+        <div>
+          <h2>Chestionar Evaluare Preliminară Client</h2>
+          <div class="card-sub">Analiza eligibilitate multi-apel</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <ul class="feature-list">
+          <li>Date companie, financiare, echipă</li>
+          <li>Nevoi dezvoltare & TRL assessment</li>
+          <li>Domenii STEP, SNCISI, RIS3 Vest</li>
+          <li>Evaluare eligibilitate 4 apeluri</li>
+          <li>A2.1, PTI, STEP NV, IR 1.1B Vest</li>
+          <li>Auto-save & progres vizual</li>
+          <li>Export Excel centralizat</li>
+        </ul>
+      </div>
+      <div class="card-footer">
+        <span class="card-btn eval-btn">Completează &#8594;</span>
+        <span class="time">~20-30 min</span>
+      </div>
+    </a>
+
   </div>
 </div>
 
@@ -397,7 +428,7 @@ body {
 </div>
 
 <div class="site-footer">
-  <p><strong>INTELLINK</strong> | Platformă formulare STEP Nord-Vest | &copy; 2026</p>
+  <p><strong>INTELLINK</strong> | Platformă formulare finanțare europeană | &copy; 2026</p>
   <p style="margin-top:.3rem;">Instrument de lucru intern — nu înlocuiește consultanța profesională de specialitate.</p>
 </div>
 
